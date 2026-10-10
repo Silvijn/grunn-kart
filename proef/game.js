@@ -18,7 +18,7 @@ let LAPS=3;const SIDE=3, CANAL=16, FARQ=4, GRASS=8, RAMPH=2.0;
 const PTS=[15,12,10,9,8,7,6,5,4,3,2,1];
 const CHARS=[
  {name:'Sherminator',w:'M',role:'Huisgenoot',suit:'#f4f2ee',skin:'#f1c9b0',hat:'swoop',hatC:'#8a5e3a',kart:'#8cc8ec',pattern:'stripes',dotC:'#1d3c8f',brows:'#6e4a2e',smile:'soft',blush:true,bigEyes:true,custom:true},
- {name:'Bullebak',w:'Z',size:1.3,role:'Huisgenoot',suit:'#1b2a4a',band:'#f2f0ea',straps:'#2f3d2c',skin:'#efc6ad',hat:'slick',hatC:'#3a271c',kart:'#6d3fa0',brows:'#3a271c',angry:true,mouth:'frown',custom:true},
+ {name:'Bullebak',w:'Z',driverSize:1.3,role:'Huisgenoot',suit:'#1b2a4a',band:'#f2f0ea',straps:'#2f3d2c',skin:'#efc6ad',hat:'slick',hatC:'#3a271c',kart:'#6d3fa0',brows:'#3a271c',angry:true,mouth:'frown',custom:true},
  {name:'Mouthbreather',w:'Z',role:'Huisgenoot',suit:'#1f5f5b',skin:'#ebc3a6',hat:'curls',hatC:'#2b1c14',kart:'#6b4226',pattern:'dots',dotC:'#d63a3a',brows:'#2b1c14',smile:true,custom:true},
  {name:'Femke',w:'L',role:'Student op de fiets',suit:'#d63a3a',skin:'#f1c7a5',hat:'helm',hatC:'#ffffff',kart:'#d63a3a'},
  {name:'Kees de Meeuw',w:'L',role:'Patatdief van de Vismarkt',suit:'#e9eef0',skin:'#ffffff',hat:'beak',hatC:'#f2a33d',kart:'#8fc3d4'},
@@ -182,7 +182,7 @@ function makeFacadeMaterial(){
 const cityGroup=new THREE.Group();scene.add(cityGroup);
 let cityReady=false;
 async function loadCity(){
-  const meta=await (await fetch('./city.json?v=202610102045')).json();const buf=await (await fetch('./city.bin?v=202610102045')).arrayBuffer();
+  const meta=await (await fetch('./city.json?v=202610102046')).json();const buf=await (await fetch('./city.bin?v=202610102046')).arrayBuffer();
   const c=meta.center,pq=meta.pq;
   const mk=(L,kind)=>{const n=L.count;const p16=new Int16Array(buf,L.pos,n*3),uv16=new Int16Array(buf,L.uv,n*2),col=new Uint8Array(buf,L.col,n*4),idx=new Uint32Array(buf,L.idx,L.index);
     const pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[3*i]=p16[3*i]*pq+c[0];pos[3*i+1]=p16[3*i+1]*pq+c[1];pos[3*i+2]=p16[3*i+2]*pq+c[2];}
@@ -432,6 +432,7 @@ function makeKartMesh(ci,bi,wi,ghost){
     add(new THREE.CapsuleGeometry(.13,.9,6,12),dk,0,1.5,.86).rotation.z=Math.PI/2;
     add(new THREE.SphereGeometry(.13,12,10),Mt('#fff7c0',true),0,1.18,1.02);drvY=1.62;drvZ=-.2;wheelBase=[.88,-.82];track=0;}
   // driver
+  const drv0=bodyG.children.length;
   const suit=Mt(ch.suit),skin=Mt(ch.skin),hat=Mt(ch.hatC,false,{shininess:70}),eye=Mt('#101418');
   add(new THREE.CapsuleGeometry(.3,.3,6,14),suit,0,drvY-.55,drvZ);
   if(ch.band){const b=add(new THREE.CylinderGeometry(.315,.315,.12,18,1,true),Mt(ch.band),0,drvY-.5,drvZ);b.material.side=THREE.DoubleSide;}
@@ -472,6 +473,9 @@ function makeKartMesh(ci,bi,wi,ghost){
   if(ch.smile==='soft'){const m=add(new THREE.TorusGeometry(.09,.016,8,18,Math.PI),Mt('#a5534c'),0,hy-.11,hz+.42);m.rotation.z=Math.PI;m.rotation.x=-.25;}
   else if(ch.smile){const m=add(new THREE.TorusGeometry(.1,.018,8,18,Math.PI),Mt('#8a3b34'),0,hy-.1,hz+.42);m.rotation.z=Math.PI;m.rotation.x=-.25;
     add(new THREE.BoxGeometry(.12,.03,.02),Mt('#ffffff'),0,hy-.135,hz+.425).rotation.x=-.25;}
+  if(ch.driverSize){ // a bigger driver in a normal-sized kart, scaled from the seat
+    const dg=new THREE.Group();const pv=new THREE.Vector3(0,drvY-.85,drvZ);dg.position.copy(pv);dg.scale.setScalar(ch.driverSize);
+    bodyG.children.slice(drv0).forEach(o=>{bodyG.remove(o);o.position.sub(pv);dg.add(o);});bodyG.add(dg);}
   // wheels: rounded tyre + coloured hub
   const wheels=[];const wr=wh.r*.95,ww=wh.id==='groot'?.5:.38;
   const tyre=new THREE.CylinderGeometry(wr,wr,ww,24,1);tyre.rotateZ(Math.PI/2);const tread=new THREE.TorusGeometry(wr-.03,.05,8,24);tread.rotateY(Math.PI/2);
@@ -1122,7 +1126,7 @@ function render(){camera.updateMatrixWorld();
 /* ================= BOOT ================= */
 resize();
 $('#touch').hidden=!isTouch;
-fetch('./groningen-bag.json?v=202610102045').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
+fetch('./groningen-bag.json?v=202610102046').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
   applyDetail();screenTitle();loadCity().catch(e=>{console.error(e);showMsg('Stad laden mislukt',3,true);});
   window.__gk={get karts(){return karts;},get player(){return player;},get state(){return state;},get TR(){return TR;},get gp(){return gp;},startRace,screenResults,sel,setGP:g=>{gp=g;},makeRoster,
     get raceTime(){return raceTime;},DBG,collideCircle,inWater};
