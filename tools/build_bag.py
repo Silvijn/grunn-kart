@@ -49,7 +49,7 @@ CONCRETE = [(200, 196, 186), (180, 176, 168), (214, 206, 190), (168, 160, 150)]
 GLASS = [(170, 190, 200), (150, 170, 186), (190, 200, 206)]
 STONE = [(186, 172, 146), (170, 156, 132)]
 ROOF_TILE = [(170, 70, 44), (150, 60, 40), (184, 92, 56), (72, 70, 76), (60, 58, 64)]
-ROOF_FLAT = [(96, 96, 100), (110, 108, 104), (84, 86, 90)]
+ROOF_FLAT = [(150, 150, 152), (164, 160, 152), (136, 138, 142)]
 def style_for(year, floors, height):
     if height > 34 and (year or 2000) < 1800:  # church towers & old monuments
         return 4, random.choice(STONE)
@@ -63,6 +63,12 @@ def style_for(year, floors, height):
     return 3, random.choice(GLASS)
 
 # --- geometry buffers
+def newell(P):
+    nrm = np.zeros(3); n = len(P)
+    for i in range(n):
+        a, b = P[i], P[(i + 1) % n]
+        nrm += np.array([(a[1] - b[1]) * (a[2] + b[2]), (a[2] - b[2]) * (a[0] + b[0]), (a[0] - b[0]) * (a[1] + b[1])])
+    return nrm
 class Buf:
     def __init__(s): s.pos = []; s.uv = []; s.col = []; s.sty = []; s.idx = []
     def add_poly(s, pts3, uvs, col, sty, holes):
@@ -70,11 +76,8 @@ class Buf:
         n = len(pts3)
         if n < 3: return
         P = np.array(pts3)
-        # project to plane for earcut
-        nrm = np.zeros(3)
-        for i in range(n):
-            a, b = P[i], P[(i + 1) % n]
-            nrm += np.array([(a[1] - b[1]) * (a[2] + b[2]), (a[2] - b[2]) * (a[0] + b[0]), (a[0] - b[0]) * (a[1] + b[1])])
+        # project to plane for earcut (normal from the outer ring only)
+        nrm = newell(P[:holes[1] if holes and len(holes) > 1 else n])
         ax = int(np.argmax(np.abs(nrm)))
         keep = [i for i in range(3) if i != ax]
         P2 = P[:, keep].astype(np.float64)
@@ -84,6 +87,12 @@ class Buf:
         except Exception:
             return
         if len(tri) == 0: return
+        # earcut does not keep the facing: make every triangle face along the surface normal
+        tri = np.array(tri, dtype=np.int64).reshape(-1, 3)
+        a, b, c = P[tri[:, 0]], P[tri[:, 1]], P[tri[:, 2]]
+        flip = np.einsum('ij,j->i', np.cross(b - a, c - a), nrm) < 0
+        tri[flip] = tri[flip][:, [0, 2, 1]]
+        tri = tri.ravel()
         base = len(s.pos)
         s.pos.extend(pts3); s.uv.extend(uvs); s.col.extend([col] * n); s.sty.extend([sty] * n)
         s.idx.extend(int(t) + base for t in tri)
@@ -141,12 +150,10 @@ for f in files:
                 P = np.array(pts)
                 if st == 'WallSurface':
                     # horizontal tangent of the wall
-                    e = P[1:len(su[0])] - P[0]
-                    h = None
-                    for vec in e:
-                        if abs(vec[0]) + abs(vec[2]) > .3: h = np.array([vec[0], 0, vec[2]]); break
-                    if h is None: continue
-                    h /= np.linalg.norm(h)
+                    wn = newell(P[:len(su[0])])
+                    hl = math.hypot(wn[0], wn[2])
+                    if hl < 1e-9: continue
+                    h = np.array([wn[2] / hl, 0, -wn[0] / hl])
                     u = P @ h; u0 = math.floor(u.min() / 3.0) * 3.0
                     uvs = [((uu - u0) / 3.0, (p[1] - mv) / floorH) for uu, p in zip(u, pts)]
                     walls.add_poly(pts, uvs, col, sty, ring_idx)
@@ -255,13 +262,13 @@ def tiles_for(level, buf, step):
                 out.add((int((X - TL[0]) // s), int((TL[1] - Y) // s)))
     return sorted(out)
 hi = tiles_for(15, 22, 2)
-lo = tiles_for(12, 170, 6)
+lo = tiles_for(13, 170, 6)
 print('aerial tiles hi', len(hi), 'lo', len(lo))
 meta = {'center': [float(c) for c in cen], 'pq': PQ, 'layout': layout, 'bytes': len(blob),
         'affine': [[float(coef[0, 0]), float(coef[1, 0]), float(coef[2, 0])], [float(coef[0, 1]), float(coef[1, 1]), float(coef[2, 1])]],
         'grid': {'x0': round(float(minx), 2), 'z0': round(float(minz), 2), 'step': STEP, 'nx': nx, 'nz': nz, 'h': grid},
         'pdok': {'url': 'https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:28992/{z}/{x}/{y}.jpeg', 'tl': TL,
-                 'hi': {'level': 15, 'span': span_l(15), 'tiles': hi}, 'lo': {'level': 12, 'span': span_l(12), 'tiles': lo}},
+                 'hi': {'level': 15, 'span': span_l(15), 'tiles': hi}, 'lo': {'level': 13, 'span': span_l(13), 'tiles': lo}},
         'landmarks': landmarks}
 json.dump(meta, open(os.path.join(OUT, 'city.json'), 'w'), separators=(',', ':'))
 print('city.bin MB', round(len(blob) / 1e6, 2), 'city.json KB', round(os.path.getsize(os.path.join(OUT, 'city.json')) / 1e3))

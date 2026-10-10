@@ -162,7 +162,7 @@ let facadeMat=null;
 function makeFacadeMaterial(){
   const atlas=canvasTex(FCELL*5,FCELL*2,(g)=>drawFacades(g,false));atlas.wrapS=atlas.wrapT=THREE.ClampToEdgeWrapping;
   const mask=canvasTex(FCELL*5,FCELL*2,(g)=>drawFacades(g,true),true,true);
-  const m=new THREE.MeshLambertMaterial({color:0xffffff});
+  const m=new THREE.MeshLambertMaterial({color:0xffffff,side:DS});
   m.onBeforeCompile=sh=>{sh.uniforms.gkAtlas={value:atlas};sh.uniforms.gkMask={value:mask};
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 fuv;attribute vec4 gkc;varying vec2 vFuv;varying vec3 vTint;varying float vStyle;')
       .replace('#include <uv_vertex>','#include <uv_vertex>\nvFuv=fuv;vTint=pow(gkc.rgb,vec3(2.2));vStyle=floor(gkc.a*255.0+0.5);');
@@ -219,8 +219,8 @@ function buildGround(meta){GRID=meta.grid;aerial.pd=meta.pdok;aerial.aff=meta.af
   const far=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:'#7d8a6a'}));far.position.y=G.h[0]-1.5;cityGroup.add(far);
   // coarse aerial photo (0.84 m/px) over the whole area
   meta.pdok.lo.tiles.forEach(([c,r])=>{const mat=new THREE.MeshLambertMaterial({color:0xffffff,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,transparent:true,opacity:0});
-    const m=tileMesh(12,c,r,meta.pdok.lo.span,.0,mat);cityGroup.add(m);aerial.lo.push(m);
-    loadTex(tileUrl(12,c,r),t=>{mat.map=t;mat.opacity=1;mat.transparent=false;mat.needsUpdate=true;});});
+    const L=meta.pdok.lo.level;const m=tileMesh(L,c,r,meta.pdok.lo.span,.0,mat);cityGroup.add(m);aerial.lo.push(m);
+    loadTex(tileUrl(L,c,r),t=>{mat.map=t;mat.opacity=1;mat.transparent=false;mat.needsUpdate=true;});});
   // sharp aerial photo (10 cm/px) along the routes, streamed around the camera
   meta.pdok.hi.tiles.forEach(([c,r])=>{const key=c+','+r;aerial.hi.set(key,{c,r,mesh:null,state:0});});}
 const _cam=new THREE.Vector3();
