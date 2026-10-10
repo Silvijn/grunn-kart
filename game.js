@@ -168,6 +168,7 @@ function inWater(x,z){for(const p of waterPolys){if(x<p.x0||x>p.x1||z<p.z0||z>p.
 
 /* ================= TRACK BUILD (real streets from OpenStreetMap) ================= */
 const TRACK_IDS=['markt','spil','vis','rond'];
+const BASE_GUESS=44;
 let TR=null;const DBG={items:{},falls:{},hits:0};
 function buildTrack(tid){
   if(TR){scene.remove(TR.group);disposeTree(TR.group);TR.ownMats.forEach(m=>m.dispose());}
@@ -196,7 +197,7 @@ function buildTrack(tid){
     if(best<0||bs<4)continue;used.push(best);const rr={r0:best,ramp:7,gap:0,vy:r===0?11:8,glide:r===0,width:Math.min(bs-.5,6)};ramps.push(rr);
     for(let j=0;j<rr.ramp;j++){const i=(best+j)%N;rampY[i]=2*(j+1)/rr.ramp;rampOf[i]=ramps.length-1;}}
   const H=new Float32Array(N);
-  const tr={def,id:tid,HW:6,N,P,T,NR,ANG,D,LEN,SP,ST:def.st,group:G,ownMats,latOf,nearest,atDist,fL,fR,bridge,rampY,rampOf,gap,ramps,H,base:0,calibrated:false,hPass:0,hI:0,raw:new Float32Array(N).fill(NaN),anchors:[]};
+  const tr={def,id:tid,HW:6,N,P,T,NR,ANG,D,LEN,SP,ST:def.st,group:G,ownMats,latOf,nearest,atDist,fL,fR,bridge,rampY,rampOf,gap,ramps,H,base:BASE_GUESS,calibrated:false,hPass:0,hI:0,raw:new Float32Array(N).fill(NaN),anchors:[]};
   tr.hAt=i=>tr.base+tr.H[i];
   TR=tr;LAPS=def.len>2000?1:def.len>1300?2:3;
   const anchor=(o,i,dy)=>{tr.anchors.push({o,i,dy});G.add(o);return o;};
@@ -251,9 +252,10 @@ function rebuildRamps(){const tr=TR;tr.rampMeshes.forEach(m=>{tr.group.remove(m)
     const m=new THREE.Mesh(geo,MAT.ramp);tr.group.add(m);tr.rampMeshes.push(m);});}
 function updateAnchors(){TR.anchors.forEach(a=>{a.o.position.y=TR.hAt(a.i)+a.dy;});}
 // progressive height sampling of the route against the loaded 3D tiles
-function calibrate(){const tr=TR;const vals=[];for(let i=0;i<40;i+=2){const j=i%tr.N;for(const s of[-1.5,0,1.5]){const h=probe(tr.P[j].x+tr.NR[j].x*s,tr.P[j].z+tr.NR[j].z*s);if(h!=null)vals.push(h);}}
-  if(vals.length<12)return false;vals.sort((a,b)=>a-b);tr.base=vals[Math.floor(vals.length*.3)];tr.calibrated=true;tr.hI=0;tr.hPass=0;tr.raw.fill(NaN);return true;}
-function sampleHeights(budget){const tr=TR;if(!tr||!tiles||!tiles.root)return;if(!tr.calibrated){calibrate();return;}
+function calibrate(at){const tr=TR;const vals=[];const i0=at||0;for(let i=-20;i<20;i+=2){const j=(i0+i+tr.N)%tr.N;for(const s of[-1.5,0,1.5]){const h=probe(tr.P[j].x+tr.NR[j].x*s,tr.P[j].z+tr.NR[j].z*s);if(h!=null)vals.push(h);}}
+  if(vals.length<12)return false;vals.sort((a,b)=>a-b);tr.base=vals[Math.floor(vals.length*.3)];tr.calibrated=true;tr.hI=0;tr.hPass=0;tr.raw.fill(NaN);updateAnchors();rebuildRamps();return true;}
+let calT=0;
+function sampleHeights(budget){const tr=TR;if(!tr||!tiles||!tiles.root)return;if(!tr.calibrated){if(--calT<=0){calT=10;calibrate(player&&state!=='menu'?player.idx:0);}return;}
   for(let n=0;n<budget;n++){const i=tr.hI;const h=probe(tr.P[i].x,tr.P[i].z);if(h!=null)tr.raw[i]=clamp(h-tr.base,-4,4);
     tr.hI=(i+1)%tr.N;if(tr.hI===0){tr.hPass++;smoothHeights();}}
   if(tr.hPass===0&&tr.hI%60===0)smoothHeights();}
@@ -867,9 +869,9 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
     TR.boxes.forEach(b=>b.m.rotation.y+=dt);TR.coins.forEach(c=>c.m.rotation.y+=dt*3);
     render();return;}
   if(paused){render();return;}
-  if(state==='loading'){loadT+=dt;sampleHeights(80);const p=player,gy=TR.hAt(p.idx);camera.position.set(p.x-Math.sin(p.yaw)*10,gy+5,p.z-Math.cos(p.yaw)*10);camera.lookAt(p.x,gy+1.5,p.z);
-    const prog=tiles?Math.round(Math.min(TR.hPass>=1?1:.5+.5*TR.hI/TR.N,tiles.loadProgress||0)*100):0;const el=document.getElementById('loadPct');if(el)el.textContent=prog+'%';
-    karts.forEach(k=>drawKart(k,tAll));if((TR.hPass>=1&&tiles&&tiles.loadProgress>.9&&loadT>1.5)||loadT>25){state='intro';showOverlay(null);}render();return;}
+  if(state==='loading'){loadT+=dt;sampleHeights(80);const p=player,gy=TR.hAt(p.idx);const hi=TR.calibrated&&TR.hPass>=1?0:1;camera.position.set(p.x-Math.sin(p.yaw)*(10+40*hi),gy+5+85*hi,p.z-Math.cos(p.yaw)*(10+40*hi));camera.lookAt(p.x,gy+1.5,p.z);
+    const prog=tiles?Math.round(Math.min(!TR.calibrated?.2:TR.hPass>=1?1:.5+.5*TR.hI/TR.N,tiles.loadProgress||0)*100):0;const el=document.getElementById('loadPct');if(el)el.textContent=prog+'%';
+    karts.forEach(k=>drawKart(k,tAll));if((TR.calibrated&&TR.hPass>=1&&tiles&&tiles.loadProgress>.9&&loadT>1.5)||loadT>30){state='intro';showOverlay(null);}render();return;}
   if(state==='intro'){introT-=dt;const p=player,gy=TR.hAt(p.idx);const f=clamp(1-introT/2.6,0,1),e=f*f*(3-2*f);const a=p.yaw+Math.PI*(1-e)*1.3;const dist=60*(1-e)+9*e,h=34*(1-e)+4.2*e;
     camera.position.set(p.x-Math.sin(a)*dist,gy+h,p.z-Math.cos(a)*dist);camera.lookAt(p.x,gy+1.6,p.z);if(introT<=0){state='count';showMsg('3',.8);beep(440,.18,'square',.07);lastBeep=3;}
     karts.forEach(k=>drawKart(k,tAll));render();return;}
@@ -910,6 +912,7 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
 let attrT=0,keyErrShown=false;
 function render(){camera.updateMatrixWorld();if(tiles){tiles.setCamera(camera);tiles.update();}
   if(state==='menu')sampleHeights(24);
+  if(TR&&TR.calibrated&&!TR.logged){TR.logged=true;console.log('[Grunn Kart] straathoogte',TR.id,TR.base.toFixed(2),'m');}
   attrT-=1/60;if(attrT<=0&&tiles){attrT=1;const a=tiles.getAttributions?tiles.getAttributions():[];const txt=a.filter(x=>x.type==='string').map(x=>x.value).join(' ');$('#attrTxt').textContent=txt;}
   if(tilesError&&!keyErrShown){keyErrShown=true;screenKey('Google laadt het 3D-model niet met deze sleutel. Controleer of de Map Tiles API aan staat en of de sleutel dit adres toestaat. Melding: '+String(tilesError).slice(0,140));}
   renderer.render(scene,camera);}
