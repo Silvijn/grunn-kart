@@ -30,3 +30,15 @@ De sleutel moet:
 
 - 3D-model: Google Map Tiles API (Photorealistic 3D Tiles). Bronvermelding staat in beeld.
 - Stratenkaart en gebouwcontouren: © OpenStreetMap-bijdragers (ODbL).
+
+## Proefversie: 3D BAG-stad (`/proef/`)
+
+Scherpe stad zonder Google-sleutel: gebouwen met echte vorm, hoogte en dak uit het 3D BAG,
+gevels per bouwjaar en aantal verdiepingen, luchtfoto van PDOK als wegdek, bomen, bankjes en
+fietsenrekken uit OpenStreetMap.
+
+- `proef/city.bin`, `proef/city.json` – gebouwen (gemaakt met `tools/build_bag.py`)
+- `proef/groningen-bag.json` – banen met straathoogtes en botsingscontouren uit het 3D BAG
+- `tools/make_proef.py` – maakt `proef/game.js` uit `game.js`
+
+Bronnen: 3D BAG (3DGI / TU Delft), Luchtfoto PDOK (Beeldmateriaal Nederland), © OpenStreetMap-bijdragers.
