@@ -18,7 +18,7 @@ let LAPS=3;const SIDE=3, CANAL=16, FARQ=4, GRASS=8, RAMPH=2.0;
 const PTS=[15,12,10,9,8,7,6,5,4,3,2,1];
 const CHARS=[
  {name:'Sherminator',w:'M',role:'Huisgenoot',suit:'#f4f2ee',skin:'#f1c9b0',hat:'swoop',hatC:'#8a5e3a',kart:'#8cc8ec',pattern:'stripes',dotC:'#1d3c8f',brows:'#6e4a2e',smile:'soft',blush:true,bigEyes:true,custom:true},
- {name:'Bullebak',w:'Z',role:'Huisgenoot',suit:'#1b2a4a',band:'#f2f0ea',straps:'#2f3d2c',skin:'#efc6ad',hat:'slick',hatC:'#3a271c',kart:'#6d3fa0',brows:'#3a271c',angry:true,mouth:'frown',custom:true},
+ {name:'Bullebak',w:'Z',size:1.3,role:'Huisgenoot',suit:'#1b2a4a',band:'#f2f0ea',straps:'#2f3d2c',skin:'#efc6ad',hat:'slick',hatC:'#3a271c',kart:'#6d3fa0',brows:'#3a271c',angry:true,mouth:'frown',custom:true},
  {name:'Mouthbreather',w:'Z',role:'Huisgenoot',suit:'#1f5f5b',skin:'#ebc3a6',hat:'curls',hatC:'#2b1c14',kart:'#6b4226',pattern:'dots',dotC:'#d63a3a',brows:'#2b1c14',smile:true,custom:true},
  {name:'Femke',w:'L',role:'Student op de fiets',suit:'#d63a3a',skin:'#f1c7a5',hat:'helm',hatC:'#ffffff',kart:'#d63a3a'},
  {name:'Kees de Meeuw',w:'L',role:'Patatdief van de Vismarkt',suit:'#e9eef0',skin:'#ffffff',hat:'beak',hatC:'#f2a33d',kart:'#8fc3d4'},
@@ -182,7 +182,7 @@ function makeFacadeMaterial(){
 const cityGroup=new THREE.Group();scene.add(cityGroup);
 let cityReady=false;
 async function loadCity(){
-  const meta=await (await fetch('./city.json?v=202610102041')).json();const buf=await (await fetch('./city.bin?v=202610102041')).arrayBuffer();
+  const meta=await (await fetch('./city.json?v=202610102045')).json();const buf=await (await fetch('./city.bin?v=202610102045')).arrayBuffer();
   const c=meta.center,pq=meta.pq;
   const mk=(L,kind)=>{const n=L.count;const p16=new Int16Array(buf,L.pos,n*3),uv16=new Int16Array(buf,L.uv,n*2),col=new Uint8Array(buf,L.col,n*4),idx=new Uint32Array(buf,L.idx,L.index);
     const pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[3*i]=p16[3*i]*pq+c[0];pos[3*i+1]=p16[3*i+1]*pq+c[1];pos[3*i+2]=p16[3*i+2]*pq+c[2];}
@@ -491,9 +491,9 @@ function makeKartMesh(ci,bi,wi,ghost){
   const tbody=shell([[-2.3,0],[2.0,0],[2.5,.1,2.4,.9],[2.0,1.9],[-2.3,1.9]],2.1,.15);train.add(new THREE.Mesh(tbody,ty));
   const stripe=new THREE.Mesh(new THREE.BoxGeometry(2.14,.3,4.4),tb);stripe.position.y=.55;train.add(stripe);const win=new THREE.Mesh(new THREE.BoxGeometry(1.8,.6,.1),tb);win.position.set(0,1.45,2.18);win.rotation.x=-.45;train.add(win);
   train.position.y=.2;train.visible=false;g.add(train);
-  g.scale.setScalar(KART_SCALE);
+  const scl=KART_SCALE*(ch.size||1);g.scale.setScalar(scl);
   g.traverse(o=>{if(o.isMesh&&o!==sh)o.castShadow=true;});scene.add(g);
-  return{g,bodyG,wheels,sparks,flame,glider,train,kc,mats};
+  return{g,bodyG,wheels,sparks,flame,glider,train,kc,mats,scl};
 }
 function disposeKartMesh(v){scene.remove(v.g);disposeTree(v.g);v.mats.forEach(m=>m.dispose());}
 
@@ -582,7 +582,9 @@ function startRace(cfg){
   loadT=0;state='loading';screenLoading();$('#hud').hidden=false;$('#posOf').textContent='/ '+karts.length;
   hudCache={};setSlot('','empty',false,0);streetShown='';
 }
-function makeRoster(){const others=CHARS.map((c,i)=>i).filter(i=>i!==sel.ci);const ros=[{ci:sel.ci,bi:sel.bi,wi:sel.wi,ai:false}];
+function makeRoster(){ // 12 racers: you, every housemate, then random Stadjers
+  const all=CHARS.map((c,i)=>i).filter(i=>i!==sel.ci);const mates=all.filter(i=>CHARS[i].custom),rest=all.filter(i=>!CHARS[i].custom).sort(()=>R()-.5);
+  const others=mates.concat(rest).slice(0,11);const ros=[{ci:sel.ci,bi:sel.bi,wi:sel.wi,ai:false}];
   const rivals=new Set([others[(R()*others.length)|0],others[(R()*others.length)|0]]);
   others.forEach(ci=>ros.push({ci,bi:(R()*BODIES.length)|0,wi:(R()*WHEELS.length)|0,ai:true,skill:rivals.has(ci)?1.01+R()*.025:.95+R()*.05}));return ros;}
 
@@ -826,7 +828,7 @@ function updateKart(k,dt,inp){
   // real walls (OSM building outlines), canals, getting lost
   const s=TR.latOf(k.idx,k.x,k.z);const smart=k===player&&settings.smart;
   if(!k.air&&TR.gap[k.idx]){fall(k);return;}
-  const wn=collideCircle(k,k.shrinkT>0?.5:.82);
+  const wn=collideCircle(k,(k.shrinkT>0?.5:.82)*(CHARS[k.cfg.ci].size||1));
   if(wn&&!k.air&&k.wallCD<=0){const into=-(Math.sin(k.moveYaw)*wn.x+Math.cos(k.moveYaw)*wn.z);if(into>.3){k.speed*=1-.5*into;k.wallCD=.3;if(k===player)beep(90,.12,'square',.05);}}
   if(wn)k.speed*=Math.max(0,1-1.2*dt);
   if(!TR.bridge[k.idx]&&(!k.air||k.y<.6)&&inWater(k.x,k.z)){if(smart){k.x=k.px;k.z=k.pz;k.speed*=.5;}else{fall(k);return;}}
@@ -848,7 +850,7 @@ function fall(k,lost){DBG.falls[k.name]=(DBG.falls[k.name]||0)+1;k.respawn=1.5;k
 
 function collide(){
   for(let i=0;i<karts.length;i++)for(let j=i+1;j<karts.length;j++){const a=karts[i],b=karts[j];if(a.respawn>0||b.respawn>0||Math.abs(a.y-b.y)>2)continue;
-    const dx=b.x-a.x,dz=b.z-a.z,d2=dx*dx+dz*dz;const ra=a.shrinkT>0?.58:.95,rb=b.shrinkT>0?.58:.95,rr=ra+rb;if(d2>=rr*rr||d2<1e-4)continue;
+    const dx=b.x-a.x,dz=b.z-a.z,d2=dx*dx+dz*dz;const ra=(a.shrinkT>0?.58:.95)*(CHARS[a.cfg.ci].size||1),rb=(b.shrinkT>0?.58:.95)*(CHARS[b.cfg.ci].size||1),rr=ra+rb;if(d2>=rr*rr||d2<1e-4)continue;
     const aInv=a.starT>0||a.trainT>0,bInv=b.starT>0||b.trainT>0;
     if(aInv&&!bInv){hit(b,'tumble',{force:true});continue;}if(bInv&&!aInv){hit(a,'tumble',{force:true});continue;}
     if(a.shrinkT>0&&b.shrinkT<=0){hit(a,'squash',{force:true});continue;}if(b.shrinkT>0&&a.shrinkT<=0){hit(b,'squash',{force:true});continue;}
@@ -863,7 +865,7 @@ function updatePickups(dt){
     for(const k of karts){if(k.respawn>0)continue;const dx=k.x-c.x,dz=k.z-c.z;if(dx*dx+dz*dz<3.6&&k.y<3){c.on=false;c.m.visible=false;c.t=9;if(k.coins<10)k.coins++;boostK(k,.12);if(k===player)beep(1320,.06,'square',.04);break;}}}}
 
 function drawKart(k,t){const v=k.v;v.g.position.set(k.x,TR.hAt(k.idx)+k.y+.06+k.hop*1.2,k.z);v.g.rotation.y=k.yaw+k.spinVis;
-  const sc=(k.shrinkT>0?.55:1)*KART_SCALE;v.g.scale.set(sc,k.squash>0?.25*KART_SCALE:sc,sc);
+  const sc=(k.shrinkT>0?.55:1)*v.scl;v.g.scale.set(sc,k.squash>0?.25*v.scl:sc,sc);
   v.bodyG.rotation.z=-k.steerVis*.08*(k.drift?2.2:1)+(k.v.wheels.length===2?-k.steerVis*.25:0);
   v.bodyG.rotation.x=k.tumble>0?(1.5-k.tumble)*8:k.trickT>0?(1-k.trickT/.45)*Math.PI*2:-Math.min(.05,k.speed/700);
   k.wheelRot+=k.speed*.04;v.wheels.forEach(w=>{w.wm.rotation.x=k.wheelRot;if(w.front)w.w.rotation.y=k.steerVis*.45;});
@@ -1120,7 +1122,7 @@ function render(){camera.updateMatrixWorld();
 /* ================= BOOT ================= */
 resize();
 $('#touch').hidden=!isTouch;
-fetch('./groningen-bag.json?v=202610102041').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
+fetch('./groningen-bag.json?v=202610102045').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
   applyDetail();screenTitle();loadCity().catch(e=>{console.error(e);showMsg('Stad laden mislukt',3,true);});
   window.__gk={get karts(){return karts;},get player(){return player;},get state(){return state;},get TR(){return TR;},get gp(){return gp;},startRace,screenResults,sel,setGP:g=>{gp=g;},makeRoster,
     get raceTime(){return raceTime;},DBG,collideCircle,inWater};

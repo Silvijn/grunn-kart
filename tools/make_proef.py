@@ -43,7 +43,7 @@ rep("  on('bKeyEdit',()=>screenKey(''));\n","")
 rep("Max laadt de scherpste gevels die Google heeft, maar vraagt een snelle computer en meer data.","Hoog en Max tekenen schaduwen en laden de luchtfoto verder vooruit.")
 rep("<p class=\"fine\">Het 3D-model is gemaakt vanuit de lucht en ziet er van iets hoger het scherpst uit.</p>","")
 rep("<p class=\"fine\">Het 3D-model van de binnenstad komt binnen bij Google en de hoogte van de straten wordt gemeten.</p>","<p class=\"fine\">De gebouwen uit het 3D BAG en de luchtfoto van PDOK worden geladen.</p>")
-rep("  scene.add(g);\n  return{g,bodyG,wheels,sparks,flame,glider,train,kc,mats};","  g.traverse(o=>{if(o.isMesh&&o!==sh)o.castShadow=true;});scene.add(g);\n  return{g,bodyG,wheels,sparks,flame,glider,train,kc,mats};")
+rep("  scene.add(g);\n  return{g,bodyG,wheels,sparks,flame,glider,train,kc,mats,scl};","  g.traverse(o=>{if(o.isMesh&&o!==sh)o.castShadow=true;});scene.add(g);\n  return{g,bodyG,wheels,sparks,flame,glider,train,kc,mats,scl};")
 rep("  rebuildRamps();updateAnchors();\n  return tr;","  rebuildRamps();updateAnchors();buildKartRoad(tr);\n  return tr;")
 import time
 VER=time.strftime('%Y%m%d%H%M')
