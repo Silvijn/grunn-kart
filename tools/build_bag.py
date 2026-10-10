@@ -133,7 +133,7 @@ for f in files:
         year = att.get('oorspronkelijkbouwjaar')
         sty, col = style_for(year, floors, top - mv)
         is_vindicat = bid == 'NL.IMBAG.Pand.0014100022188032'   # sociëteit Mutua Fides, Grote Markt oostzijde
-        if is_vindicat: sty, col = 5, (116, 52, 40); floorH = max(3.6, (roofmin - mv) / 6)
+        if is_vindicat: sty, col = 5, (168, 152, 138); floorH = max(3.6, (roofmin - mv) / 6)
         rcol = random.choice(ROOF_TILE[:3] if (year or 2000) < 1960 and random.random() < .7 else ROOF_TILE[3:])
         if sty == 4: rcol = (88, 120, 108)  # green copper / slate for monuments
         if is_vindicat:
@@ -157,7 +157,16 @@ for f in files:
                     if face > 0 and (best is None or L > best[0]): best = (L, a, b, nx, nz)
             if best:
                 L, a, b, nx, nz = best
-                vindicat_info = {'a': [round(a[0], 2), round(a[1], 2)], 'b': [round(b[0], 2), round(b[1], 2)], 'n': [round(nx, 3), round(nz, 3)],
+                # height of the wall along this edge
+                hs = []
+                for g in geoms:
+                    for su in g['boundaries'][0]:
+                        for v in su[0]:
+                            px, pz = G[v]; dx, dz = b[0] - a[0], b[1] - a[1]
+                            t = ((px - a[0]) * dx + (pz - a[1]) * dz) / (L * L)
+                            if -.02 < t < 1.02 and abs((px - a[0]) * nx + (pz - a[1]) * nz) < .8: hs.append(float(V[v, 2]))
+                hf = round(max(hs) - mv, 2) if hs else round(top - mv, 2)
+                vindicat_info = {'a': [round(a[0], 2), round(a[1], 2)], 'b': [round(b[0], 2), round(b[1], 2)], 'n': [round(nx, 3), round(nz, 3)], 'hf': hf,
                                  'mv': round(mv, 2), 'top': round(top, 2), 'floorH': round(floorH, 2), 'floors': floors}
                 print('vindicat facade', vindicat_info)
         if top - mv > 60: landmarks.append({'x': round(float(cx), 1), 'z': round(float(cz), 1), 'h': round(top - mv, 1), 'year': year})
