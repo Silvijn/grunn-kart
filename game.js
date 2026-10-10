@@ -98,7 +98,8 @@ window.addEventListener('resize',resize);
 
 const DEG=Math.PI/180;
 let DATA=null,tiles=null,tilesError=null,tileBytes=0;
-const DETAIL=[{name:'Laag',err:36},{name:'Normaal',err:20},{name:'Hoog',err:12}];
+const DETAIL=[{name:'Laag',err:36,pr:1,cache:[600,900]},{name:'Normaal',err:20,pr:1.25,cache:[900,1400]},{name:'Hoog',err:12,pr:1.5,cache:[1400,2200]},{name:'Max',err:6,pr:2,cache:[2200,3600]}];
+const MAXANISO=renderer.capabilities.getMaxAnisotropy?renderer.capabilities.getMaxAnisotropy():1;
 function startTiles(key){
   if(tiles){scene.remove(tiles.group);tiles.dispose();tiles=null;}
   tilesError=null;
@@ -108,13 +109,14 @@ function startTiles(key){
   tiles.registerPlugin(new GLTFExtensionsPlugin({dracoLoader:draco}));
   tiles.registerPlugin(new TileCompressionPlugin());
   tiles.registerPlugin(new ReorientationPlugin({lat:DATA.origin[0]*DEG,lon:DATA.origin[1]*DEG,height:0}));
-  tiles.errorTarget=DETAIL[settings.detail].err;
-  tiles.lruCache.minSize=900;tiles.lruCache.maxSize=1400;
+  applyDetail();
+  // sharper street textures at grazing angles: full anisotropic filtering on every tile texture
+  tiles.addEventListener('load-model',({scene:sc})=>{sc.traverse(o=>{const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];ms.forEach(m=>{if(m.map){m.map.anisotropy=MAXANISO;m.map.needsUpdate=true;}});});});
   tiles.addEventListener('load-error',e=>{const msg=String((e&&e.error&&e.error.message)||e&&e.error||'');if(/40[0-3]/.test(msg)||/key|denied|forbidden/i.test(msg)||!tiles.root)tilesError=msg||'Laden mislukt';});
   tiles.setCamera(camera);tiles.setResolutionFromRenderer(camera,renderer);
   scene.add(tiles.group);
 }
-function applyDetail(){if(tiles)tiles.errorTarget=DETAIL[settings.detail].err;}
+function applyDetail(){const d=DETAIL[settings.detail];renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,d.pr));resize();if(tiles){tiles.errorTarget=d.err;tiles.lruCache.minSize=d.cache[0];tiles.lruCache.maxSize=d.cache[1];}}
 
 /* height probing against the photo-realistic mesh */
 const ray=new THREE.Raycaster();const DOWN=new THREE.Vector3(0,-1,0);const rayO=new THREE.Vector3();
@@ -327,7 +329,7 @@ function itemMesh(kind){const g=new THREE.Group();
 
 /* ================= AUDIO ================= */
 let AC=null,eng=null;
-const settings=store.get('settings',{autoGas:null,smart:null,mute:false,detail:1});if(settings.detail==null)settings.detail=1;
+const settings=store.get('settings',{autoGas:null,smart:null,mute:false,detail:null,cam:0});if(settings.cam==null)settings.cam=0;
 function audioInit(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator();o.type='sawtooth';const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=420;const g=AC.createGain();g.gain.value=0;o.connect(f);f.connect(g);g.connect(AC.destination);o.start();eng={o,g};}catch(e){AC=null;}}
 function beep(freq,dur,type,vol){if(!AC||settings.mute)return;try{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.value=freq;const t=AC.currentTime;g.gain.setValueAtTime(vol||.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.02);}catch(e){}}
 const ICON_SND='<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#f6f3ea"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="#f6f3ea" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
@@ -348,6 +350,7 @@ let ghost=null,ghostRec=null,ghostMesh=null,recT=0;
 let isTouch=(window.matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window&&navigator.maxTouchPoints>0);
 if(settings.autoGas==null)settings.autoGas=isTouch;
 if(settings.smart==null)settings.smart=isTouch;
+if(settings.detail==null||settings.detail>3)settings.detail=isTouch?1:3;
 const sel=store.get('sel',{ci:0,bi:0,wi:0,cc:2});
 const input={up:false,down:false,left:false,right:false,drift:false,tl:false,tr:false,tb:false,td:false,driftEdge:false};
 
@@ -800,9 +803,12 @@ function screenSettings(){showOverlay(`<div class="panel"><p class="eyebrow">Ins
    <label class="tog"><span>Slim sturen<small>Houdt je uit de gracht. Vallen na een gemiste sprong kan nog wel.</small></span><input type="checkbox" id="sSmart" ${settings.smart?'checked':''}></label>
    <label class="tog"><span>Geluid</span><input type="checkbox" id="sSnd" ${settings.mute?'':'checked'}></label>
    <p class="seglbl">Detail van de stad</p><div class="seg">${DETAIL.map((d,i)=>`<button data-det="${i}" class="${i===settings.detail?'sel':''}">${d.name}</button>`).join('')}</div>
-   <p class="fine">Laag loopt het soepelst op een telefoon; Hoog laadt scherpere gevels maar kost meer data.</p>
+   <p class="fine">Laag loopt het soepelst op een telefoon. Max laadt de scherpste gevels die Google heeft, maar vraagt een snelle computer en meer data.</p>
+   <p class="seglbl">Camera</p><div class="seg">${['Dichtbij','Hoog'].map((d,i)=>`<button data-cam="${i}" class="${i===settings.cam?'sel':''}">${d}</button>`).join('')}</div>
+   <p class="fine">Het 3D-model is gemaakt vanuit de lucht en ziet er van iets hoger het scherpst uit.</p>
    <div class="navrow"><button class="back" id="bBack">Terug</button><button class="back" id="bKeyEdit">Google-sleutel wijzigen</button></div></div>`);
   onAll('[data-det]',el=>{settings.detail=+el.dataset.det;store.set('settings',settings);applyDetail();ov.querySelectorAll('[data-det]').forEach(b=>b.classList.toggle('sel',b===el));});
+  onAll('[data-cam]',el=>{settings.cam=+el.dataset.cam;store.set('settings',settings);ov.querySelectorAll('[data-cam]').forEach(b=>b.classList.toggle('sel',b===el));});
   on('bKeyEdit',()=>screenKey(''));
   const save=()=>{settings.autoGas=$('#sGas').checked;settings.smart=$('#sSmart').checked;settings.mute=!$('#sSnd').checked;store.set('settings',settings);syncMute();};
   ['sGas','sSmart','sSnd'].forEach(id=>document.getElementById(id).addEventListener('change',save));on('bBack',screenTitle);}
@@ -892,8 +898,8 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
   if(finishTimer>0){finishTimer-=dt;if(finishTimer<=0&&state==='race')screenResults();}
   // camera
   const p=player;p.camYaw=lerpA(p.camYaw,p.moveYaw+wrapA(p.yaw-p.moveYaw)*.35,1-Math.exp(-dt*(p.spin>0?2:5)));
-  const cy=p.camYaw+(lookBack?Math.PI:0),dist=8.6+Math.max(0,p.speed)*.04;
-  const pgy=TR.hAt(p.idx)+p.y;camPos.set(p.x-Math.sin(cy)*dist,pgy+3.6+Math.max(0,p.speed)*.02,p.z-Math.cos(cy)*dist);
+  const cy=p.camYaw+(lookBack?Math.PI:0),hiCam=settings.cam===1,dist=(hiCam?13:8.6)+Math.max(0,p.speed)*.04;
+  const pgy=TR.hAt(p.idx)+p.y;camPos.set(p.x-Math.sin(cy)*dist,pgy+(hiCam?7.5:3.6)+Math.max(0,p.speed)*.02,p.z-Math.cos(cy)*dist);
   if(p.respawn>0)camPos.y+=2;
   camera.position.lerp(camPos,1-Math.exp(-dt*8));camLook.set(p.x+Math.sin(cy)*6,pgy+1.5,p.z+Math.cos(cy)*6);camera.lookAt(camLook);
   const tf=baseFov()+(p.boost>0?10:0)+Math.max(0,p.speed-20)*.15;camera.fov+=(tf-camera.fov)*Math.min(1,dt*4);camera.updateProjectionMatrix();
