@@ -17,6 +17,7 @@ function fmt1(t){const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.
 let LAPS=3;const SIDE=3, CANAL=16, FARQ=4, GRASS=8, RAMPH=2.0;
 const PTS=[15,12,10,9,8,7,6,5,4,3,2,1];
 const CHARS=[
+ {name:'Mouthbreather',w:'Z',role:'Huisgenoot',suit:'#1f5f5b',skin:'#ebc3a6',hat:'curls',hatC:'#2b1c14',kart:'#6b4226',pattern:'dots',dotC:'#d63a3a',brows:'#2b1c14',smile:true,custom:true},
  {name:'Femke',w:'L',role:'Student op de fiets',suit:'#d63a3a',skin:'#f1c7a5',hat:'helm',hatC:'#ffffff',kart:'#d63a3a'},
  {name:'Kees de Meeuw',w:'L',role:'Patatdief van de Vismarkt',suit:'#e9eef0',skin:'#ffffff',hat:'beak',hatC:'#f2a33d',kart:'#8fc3d4'},
  {name:'Lotte',w:'L',role:'Barista',suit:'#6b4b3e',skin:'#c99572',hat:'beanie',hatC:'#2fa36b',kart:'#2fa36b'},
@@ -269,11 +270,16 @@ function smoothHeights(){const tr=TR,N=tr.N,raw=tr.raw,out=new Float32Array(N);c
 
 /* ================= KART MODELS ================= */
 const KART_SCALE=.78;
+const _dotTex={};
+function dotTexture(base,dot){const k=base+dot;if(_dotTex[k])return _dotTex[k];const t=canvasTex(128,128,(g,w,h)=>{g.fillStyle=base;g.fillRect(0,0,w,h);g.fillStyle=dot;
+  for(const [x,y] of[[20,24],[84,16],[52,64],[110,84],[18,100],[76,112]]){g.beginPath();g.arc(x,y,11,0,7);g.fill();}});t.repeat.set(1.6,1.6);_dotTex[k]=t;return t;}
 function makeKartMesh(ci,bi,wi,ghost){
   const ch=CHARS[ci],body=BODIES[bi].id,wh=WHEELS[wi];
   const g=new THREE.Group(),bodyG=new THREE.Group();g.add(bodyG);const mats=[];
   const Mt=(c,basic,opts)=>{const m=basic?new THREE.MeshBasicMaterial({color:c}):new THREE.MeshPhongMaterial(Object.assign({color:c,shininess:60,specular:0x333333},opts||{}));if(ghost){m.transparent=true;m.opacity=.38;m.depthWrite=false;}mats.push(m);return m;};
-  const kc=Mt(ch.kart,false,{shininess:90,specular:0x666666}),dk=Mt('#24272b'),chrome=Mt('#c9ced3',false,{shininess:120,specular:0xffffff});
+  let kc=Mt(ch.kart,false,{shininess:90,specular:0x666666});
+  if(ch.pattern==='dots'){kc.map=dotTexture(ch.kart,ch.dotC);kc.color.set('#ffffff');kc.needsUpdate=true;}
+  const dk=Mt('#24272b'),chrome=Mt('#c9ced3',false,{shininess:120,specular:0xffffff});
   const add=(geo,mat,x,y,z,par)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);(par||bodyG).add(m);return m;};
   // side profile (forward = +x of the shape, up = +y) extruded sideways with rounded edges
   const shell=(pts,width,bevel)=>{const s=new THREE.Shape();s.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++){const p=pts[i];if(p.length===4)s.quadraticCurveTo(p[0],p[1],p[2],p[3]);else s.lineTo(p[0],p[1]);}s.closePath();
@@ -316,7 +322,17 @@ function makeKartMesh(ci,bi,wi,ghost){
   else if(ch.hat==='hair'){const h=add(new THREE.SphereGeometry(.47,20,14,0,Math.PI*2,0,Math.PI*.55),hat,0,hy+.04,hz-.03);h.scale.set(1.04,1,1.06);add(new THREE.SphereGeometry(.17,12,10),hat,0,hy-.06,hz-.5);}
   else if(ch.hat==='straw'){add(new THREE.CylinderGeometry(.85,.88,.05,24),hat,0,hy+.28,hz);add(new THREE.CylinderGeometry(.36,.42,.3,20),hat,0,hy+.44,hz);}
   else if(ch.hat==='beak'){const bk=add(new THREE.ConeGeometry(.14,.5,12),hat,0,hy-.06,hz+.62);bk.rotation.x=Math.PI/2;}
+  else if(ch.hat==='curls'){ // voluminous curls: rings of small spheres over top, sides and back, open at the face
+    const cg=new THREE.SphereGeometry(.12,10,8);let k=0;
+    for(let lat=0;lat<=112;lat+=16){const ring=Math.max(1,Math.round(2*Math.PI*Math.sin(lat*DEG)*.5/.15));
+      for(let q=0;q<ring;q++){const lon=(q+(lat/16)%2*.5)/ring*Math.PI*2;const fx=Math.sin(lon),fz=Math.cos(lon); // fz>0 = towards the face
+        if(lat>34&&fz>.42)continue;if(lat>95&&fz>-.2)continue;
+        const r=.46+((k*37)%10)/120;const sl=Math.sin(lat*DEG),cl=Math.cos(lat*DEG);
+        add(cg,hat,fx*sl*r,hy+.05+cl*r,hz+fz*sl*r).scale.setScalar(.9+((k*13)%10)/30);k++;}}}
   else if(ch.hat==='hard'){const h=add(new THREE.SphereGeometry(.48,20,12,0,Math.PI*2,0,Math.PI/2),hat,0,hy+.08,hz);h.scale.set(1,.8,1);add(new THREE.CylinderGeometry(.58,.58,.04,24),hat,0,hy+.1,hz);}
+  if(ch.brows){for(const s of[-1,1]){const b=add(new THREE.CapsuleGeometry(.025,.13,4,8),Mt(ch.brows),s*.16,hy+.2,hz+.41);b.rotation.z=Math.PI/2+s*.12;}}
+  if(ch.smile){const m=add(new THREE.TorusGeometry(.1,.018,8,18,Math.PI),Mt('#8a3b34'),0,hy-.1,hz+.42);m.rotation.z=Math.PI;m.rotation.x=-.25;
+    add(new THREE.BoxGeometry(.12,.03,.02),Mt('#ffffff'),0,hy-.135,hz+.425).rotation.x=-.25;}
   // wheels: rounded tyre + coloured hub
   const wheels=[];const wr=wh.r*.95,ww=wh.id==='groot'?.5:.38;
   const tyre=new THREE.CylinderGeometry(wr,wr,ww,24,1);tyre.rotateZ(Math.PI/2);const tread=new THREE.TorusGeometry(wr-.03,.05,8,24);tread.rotateY(Math.PI/2);
@@ -763,6 +779,10 @@ function portrait(ci){const c=CHARS[ci];let hat='';const hc=c.hatC;
   else if(c.hat==='straw')hat=`<ellipse cx="24" cy="18" rx="18" ry="3.5" fill="${hc}"/><rect x="16" y="9" width="16" height="9" rx="3" fill="${hc}"/>`;
   else if(c.hat==='beak')hat=`<path d="M24 28l9 3-9 3z" fill="${hc}"/>`;
   else if(c.hat==='hard')hat=`<path d="M11 21a13 12 0 0 1 26 0z" fill="${hc}"/><rect x="8" y="20" width="32" height="3" rx="1.5" fill="${hc}"/>`;
+  if(c.hat==='curls'){hat='';for(let i=0;i<16;i++){const a=Math.PI*(1.05+i/15*0.9),r=11.5+(i%3);hat+=`<circle cx="${(24+Math.cos(a)*r).toFixed(1)}" cy="${(25+Math.sin(a)*r).toFixed(1)}" r="4.6" fill="${hc}"/>`;}
+    for(const x of[12.5,35.5])hat+=`<circle cx="${x}" cy="30" r="4" fill="${hc}"/>`;}
+  if(c.brows)hat+=`<path d="M17 23.5h5M26 23.5h5" stroke="${c.brows}" stroke-width="1.8" stroke-linecap="round"/>`;
+  if(c.smile)hat+=`<path d="M19.5 31.5q4.5 4 9 0" stroke="#7a2a2a" stroke-width="1.8" fill="#fff" stroke-linecap="round"/>`;
   const eyes=c.hat==='helm'?'':'<circle cx="19.5" cy="27" r="1.6" fill="#101418"/><circle cx="28.5" cy="27" r="1.6" fill="#101418"/>';
   return`<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="${c.kart}" opacity=".35"/><rect x="14" y="36" width="20" height="12" rx="5" fill="${c.suit}"/><circle cx="24" cy="27" r="12" fill="${c.skin}"/>${eyes}${hat}</svg>`;}
 
