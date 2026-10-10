@@ -300,7 +300,8 @@ if len(sys.argv) > 4:
                     x, z = ax + (bx - ax) * k * 8 / max(L, 1), az + (bz - az) * k * 8 / max(L, 1)
                     if near_track(x, z, 200): props['tree'].append([round(x, 2), round(z, 2), round(ground_at(x, z), 2)])
     # trees on the racing line are left out so nobody hits a trunk in the middle of the road
-    props['tree'] = [p for p in props['tree'] if not near_track(p[0], p[1], 2.2)]
+    props['tree'] = [p for p in props['tree'] if not near_track(p[0], p[1], 3.0)]
+    for k in ('bench', 'bike'): props[k] = [p for p in props[k] if not near_track(p[0], p[1], 6.5)]
     meta['props'] = props
     json.dump(meta, open(os.path.join(OUT, 'city.json'), 'w'), separators=(',', ':'))
     print('props', {k: len(v) for k, v in props.items()})

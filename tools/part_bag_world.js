@@ -166,3 +166,30 @@ function buildProps(meta){const P=meta.props||{tree:[],bench:[],bike:[]};const m
       pv.set(b[0]+ox,b[2],b[1]+oz);m4.compose(pv,q,sc);frame.setMatrixAt(i*6+k,m4);col.setHSL(((i*6+k)*.17)%1,.5,.45);frame.setColorAt(i*6+k,col);}});
     cityGroup.add(wheel);cityGroup.add(frame);}}
 
+
+/* ---- the kart road: crisp asphalt with kerbs along the route, plus chevron boards in sharp corners ---- */
+TEX.asphalt=canvasTex(256,512,(g,w,h)=>{g.fillStyle='#45474d';g.fillRect(0,0,w,h);for(let i=0;i<9000;i++){const v=50+Math.random()*55|0;g.fillStyle=`rgba(${v},${v},${v+4},.55)`;g.fillRect(Math.random()*w,Math.random()*h,2,2);}
+  g.fillStyle='#f3f1ea';g.fillRect(10,0,9,h);g.fillRect(w-19,0,9,h);g.fillStyle='rgba(243,241,234,.85)';g.fillRect(w/2-4,0,8,h*.4);});
+TEX.kerb=canvasTex(64,128,(g,w,h)=>{g.fillStyle='#e8e4dc';g.fillRect(0,0,w,h);g.fillStyle='#d63a3a';g.fillRect(0,0,w,h/2);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(w-6,0,6,h);});
+TEX.chev=canvasTex(256,96,(g,w,h)=>{g.fillStyle='#d63a3a';g.fillRect(0,0,w,h);g.fillStyle='#f6f3ea';for(let k=0;k<3;k++){const x=30+k*72;g.beginPath();g.moveTo(x,10);g.lineTo(x+40,h/2);g.lineTo(x,h-10);g.lineTo(x+20,h-10);g.lineTo(x+60,h/2);g.lineTo(x+20,10);g.closePath();g.fill();}},true);
+function buildKartRoad(tr){const N=tr.N,P=tr.P,NR=tr.NR,D=tr.D,LEN=tr.LEN;
+  // width follows the real street, between 2.2 and 5.5 m on each side, smoothed
+  const raw=(a)=>Float32Array.from(a,v=>clamp(v-.4,2.2,5.5));const sm=a=>{const o=new Float32Array(N);for(let i=0;i<N;i++){let s=0;for(let k=-6;k<=6;k++)s+=a[(i+k+N)%N];o[i]=s/13;}return o;};
+  const WL=sm(raw(tr.fL)),WR=sm(raw(tr.fR));tr.roadL=WL;tr.roadR=WR;
+  const strip=(o1,o2,dy,mat,rep,u0,u1)=>{const pos=[],uv=[],idx=[];const reps=Math.max(1,Math.round(LEN/rep));
+    for(let i=0;i<=N;i++){const ii=i%N,p=P[ii],n=NR[ii],a=o1(ii),b=o2(ii),y=tr.hAt(ii)+dy;pos.push(p.x+n.x*a,y,p.z+n.z*a,p.x+n.x*b,y,p.z+n.z*b);const v=D[i]/LEN*reps;uv.push(u0,v,u1,v);if(i<N){const q=i*2;idx.push(q,q+2,q+1,q+1,q+2,q+3);}}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();
+    const m=new THREE.Mesh(geo,mat);m.receiveShadow=true;tr.group.add(m);return m;};
+  const road=new THREE.MeshLambertMaterial({map:TEX.asphalt,side:DS,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+  const kerb=new THREE.MeshLambertMaterial({map:TEX.kerb,side:DS,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});tr.ownMats.push(road,kerb);
+  strip(i=>-WL[i],i=>WR[i],.04,road,10,0,1);
+  strip(i=>-WL[i]-.7,i=>-WL[i],.06,kerb,2,0,1);strip(i=>WR[i],i=>WR[i]+.7,.06,kerb,2,1,0);
+  // chevron boards on the outside of sharp corners
+  const cm=new THREE.MeshLambertMaterial({map:TEX.chev,side:DS});const pm=new THREE.MeshLambertMaterial({color:'#2b2f33'});tr.ownMats.push(cm,pm);
+  let last=-99;for(let i=0;i<N;i+=2){const turn=wrapA(tr.ANG[(i+14)%N]-tr.ANG[i]);if(Math.abs(turn)<.75||i-last<10)continue;last=i;
+    const j=(i+10)%N;const rs=Math.sign(NR[j].x*-Math.cos(tr.ANG[j])+NR[j].z*Math.sin(tr.ANG[j]))||1; // +1 when s>0 is the driver's right
+    const offR=rs>0?WR[j]+1.2:-(WL[j]+1.2),offL=rs>0?-(WL[j]+1.2):WR[j]+1.2;const side=turn>0?-1:1; // left turn (yaw +): board on the right, arrows pointing left
+    const off=turn>0?offR:offL,p=P[j],n=NR[j];const x=p.x+n.x*off,z=p.z+n.z*off,y=tr.hAt(j);
+    const b=new THREE.Mesh(new THREE.PlaneGeometry(2.6,1),cm);b.position.set(x,y+1.5,z);b.rotation.y=tr.ANG[j]+Math.PI;if(side<0)b.scale.x=-1;tr.group.add(b);
+    for(const s of[-1,1]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,1.5,6),pm);post.position.set(x+tr.T[j].x*0+Math.cos(tr.ANG[j])*s*1.1,y+.75,z-Math.sin(tr.ANG[j])*s*1.1);tr.group.add(post);}}
+}
