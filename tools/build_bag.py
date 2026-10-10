@@ -123,6 +123,24 @@ for f in files:
         vids = [v for g in geoms for sh in g['boundaries'] for su in sh for ring in su for v in ring]
         cx, cz = G[vids].mean(axis=0)
         if not near_track(cx, cz, 230): continue
+        # a building that stands on the route (e.g. a gate over an alley) is left out entirely
+        on_route = False
+        for g in geoms:
+            sem = g.get('semantics', {}); surfs = sem.get('surfaces', []); vals = sem.get('values', [[]])[0]
+            for si, su in enumerate(g['boundaries'][0]):
+                if vals and vals[si] is not None and surfs[vals[si]]['type'] == 'GroundSurface':
+                    ring = [tuple(map(float, G[v])) for v in su[0]]
+                    rx = [q[0] for q in ring]; rz = [q[1] for q in ring]
+                    msk = (tpts[:, 0] > min(rx)) & (tpts[:, 0] < max(rx)) & (tpts[:, 1] > min(rz)) & (tpts[:, 1] < max(rz))
+                    for px, pz in tpts[msk]:
+                        ins = False; jj = len(ring) - 1
+                        for ii in range(len(ring)):
+                            if (ring[ii][1] > pz) != (ring[jj][1] > pz) and px < (ring[jj][0] - ring[ii][0]) * (pz - ring[ii][1]) / (ring[jj][1] - ring[ii][1]) + ring[ii][0]: ins = not ins
+                            jj = ii
+                        if ins: on_route = True; break
+                if on_route: break
+            if on_route: break
+        if on_route: print('  skipped building on the route at', round(cx, 1), round(cz, 1)); continue
         seen.add(bid); nb += 1
         mv = att.get('b3_h_maaiveld')
         if mv is None: mv = float(V[vids, 2].min())
@@ -242,16 +260,27 @@ def ground_at(x, z, k=8):
     d2 = (FP[:, 0] - x) ** 2 + (FP[:, 1] - z) ** 2
     idx = np.argsort(d2)[:k]
     return float(np.median(FP[idx, 2]))
-for tid, t in D['tracks'].items():
-    h = [ground_at(x, z) for x, z in zip(t['x'], t['z'])]
-    n = len(h); hs = [statistics.mean(h[(i + k) % n] for k in range(-6, 7)) for i in range(n)]
-    t['h'] = [round(v, 2) for v in hs]
 # height grid for the terrain under the aerial photo
 minx, maxx = tpts[:, 0].min() - 160, tpts[:, 0].max() + 160
 minz, maxz = tpts[:, 1].min() - 160, tpts[:, 1].max() + 160
 STEP = 8.0
 nx = int((maxx - minx) / STEP) + 2; nz = int((maxz - minz) / STEP) + 2
 grid = [round(ground_at(minx + i * STEP, minz + j * STEP), 2) for j in range(nz) for i in range(nx)]
+GA = np.array(grid).reshape(nz, nx)
+def grid_h(x, z):   # bilinear, exactly like groundH() in the game
+    fx = min(max((x - minx) / STEP, 0), nx - 1.001); fz = min(max((z - minz) / STEP, 0), nz - 1.001)
+    i, j = int(fx), int(fz); u, v = fx - i, fz - j
+    return (GA[j, i] * (1 - u) + GA[j, i + 1] * u) * (1 - v) + (GA[j + 1, i] * (1 - u) + GA[j + 1, i + 1] * u) * v
+# street height = highest ground (incl. aerial photo) across the full road width, so the road always lies on top
+for tid, t in D['tracks'].items():
+    X, Z = t['x'], t['z']; n = len(X); raw = []
+    for i in range(n):
+        a, b = (i - 2) % n, (i + 2) % n; tx, tz = X[b] - X[a], Z[b] - Z[a]; L = math.hypot(tx, tz) or 1; nxx, nzz = -tz / L, tx / L
+        raw.append(max(grid_h(X[i] + nxx * s, Z[i] + nzz * s) for s in (-7, -5, -3, -1.5, 0, 1.5, 3, 5, 7)))
+    mx = [max(raw[(i + k) % n] for k in range(-4, 5)) for i in range(n)]          # moving max, then smooth
+    hs = [statistics.mean(mx[(i + k) % n] for k in range(-4, 5)) for i in range(n)]
+    hs = [max(h, r) + .02 for h, r in zip(hs, raw)]
+    t['h'] = [round(v, 2) for v in hs]
 
 # --- collision footprints from 3D BAG (match the visible buildings exactly)
 def pip(x, z, poly):
@@ -274,8 +303,7 @@ for b in footprints:
     for x, z in tpts[m]:
         if pip(x, z, b): block = True; break
         n = len(b) // 2
-        if any(segdist(x, z, b[2 * i], b[2 * i + 1], b[2 * ((i + 1) % n)], b[2 * ((i + 1) % n) + 1]) < 1.4 for i in range(n)): block = True; break
-    if block: dropped += 1
+    if block: dropped += 1; print('  route runs through building at', round(sum(xs_)/len(xs_),1), round(sum(zs_)/len(zs_),1), 'size', round(max(xs_)-min(xs_),1), round(max(zs_)-min(zs_),1))
     else: keep.append(b)
 print('footprints', len(footprints), 'kept for collision', len(keep), 'dropped (on route)', dropped)
 D2 = {'origin': D['origin'], 'tracks': D['tracks'], 'buildings': keep, 'water': D['water']}

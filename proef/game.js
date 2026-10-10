@@ -23,19 +23,7 @@ const CHARS=[
  {name:'Chillvijn',w:'M',role:'Huisgenoot',suit:'#f6f4ef',skin:'#efc2a4',hat:'messy',hatC:'#9a7650',kart:'#f2c61f',emblem:{text:'W',color:'#6d3fa0'},brows:'#7a5a3c',mouth:'pout',stubble:'#b78a6c',shades:true,tie:['#1d3c8f','#8cc8ec'],necklace:true,custom:true},
  {name:'Sherminator',w:'M',role:'Huisgenoot',suit:'#f4f2ee',skin:'#f1c9b0',hat:'swoop',hatC:'#8a5e3a',kart:'#8cc8ec',pattern:'stripes',dotC:'#1d3c8f',brows:'#6e4a2e',smile:'soft',blush:true,bigEyes:true,custom:true},
  {name:'Bullebak',w:'Z',driverSize:1.3,role:'Huisgenoot',suit:'#1b2a4a',band:'#f2f0ea',straps:'#2f3d2c',skin:'#efc6ad',hat:'slick',hatC:'#3a271c',kart:'#6d3fa0',brows:'#3a271c',angry:true,mouth:'frown',custom:true},
- {name:'Mouthbreather',w:'Z',role:'Huisgenoot',suit:'#1f5f5b',skin:'#ebc3a6',hat:'curls',hatC:'#2b1c14',kart:'#6b4226',pattern:'dots',dotC:'#d63a3a',brows:'#2b1c14',smile:true,custom:true},
- {name:'Femke',w:'L',role:'Student op de fiets',suit:'#d63a3a',skin:'#f1c7a5',hat:'helm',hatC:'#ffffff',kart:'#d63a3a'},
- {name:'Kees de Meeuw',w:'L',role:'Patatdief van de Vismarkt',suit:'#e9eef0',skin:'#ffffff',hat:'beak',hatC:'#f2a33d',kart:'#8fc3d4'},
- {name:'Lotte',w:'L',role:'Barista',suit:'#6b4b3e',skin:'#c99572',hat:'beanie',hatC:'#2fa36b',kart:'#2fa36b'},
- {name:'Jelle',w:'L',role:'Krantenbezorger',suit:'#3b82f6',skin:'#f3cdb0',hat:'cap',hatC:'#ffcf3f',kart:'#e8b81f'},
- {name:'Saskia',w:'M',role:'Studente',suit:'#9b5de5',skin:'#e7b897',hat:'hair',hatC:'#5a3220',kart:'#9b5de5'},
- {name:'Bram',w:'M',role:'Schipper',suit:'#1d4e89',skin:'#e0a98a',hat:'captain',hatC:'#f6f3ea',kart:'#2a62a8'},
- {name:'Mo',w:'M',role:'Snackbarbaas',suit:'#ff7a1a',skin:'#a8704d',hat:'bandana',hatC:'#d63a3a',kart:'#ff7a1a'},
- {name:'Anouk',w:'M',role:'Wielrenster',suit:'#e46b9a',skin:'#f0c3a3',hat:'helm',hatC:'#e46b9a',kart:'#e46b9a'},
- {name:'Gerda',w:'Z',role:'Marktkoopvrouw',suit:'#2b7a78',skin:'#f2c9ad',hat:'straw',hatC:'#e8c46a',kart:'#2b7a78'},
- {name:'Harm',w:'Z',role:'Boer uit het Ommeland',suit:'#3e6b2f',skin:'#e3a888',hat:'cap',hatC:'#3e6b2f',kart:'#7a9a2e'},
- {name:'Sjoerd',w:'Z',role:'Havenmeester',suit:'#22313f',skin:'#d9a07f',hat:'captain',hatC:'#22313f',kart:'#5b6b7a'},
- {name:'Dirk',w:'Z',role:'Bouwvakker',suit:'#f2a900',skin:'#c48a64',hat:'hard',hatC:'#ffcf3f',kart:'#c46a1a'}];
+ {name:'Mouthbreather',w:'Z',role:'Huisgenoot',suit:'#1f5f5b',skin:'#ebc3a6',hat:'curls',hatC:'#2b1c14',kart:'#6b4226',pattern:'dots',dotC:'#d63a3a',brows:'#2b1c14',smile:true,custom:true}];
 const WCLS={L:{name:'Licht',sp:2,ac:4,wt:1,ha:4.5,tr:3.5,mt:4},M:{name:'Middel',sp:3,ac:3,wt:3,ha:3,tr:3,mt:3},Z:{name:'Zwaar',sp:4,ac:2,wt:5,ha:2,tr:2.5,mt:2}};
 const BODIES=[{id:'stad',name:'Stadskart',d:{}},{id:'bak',name:'Bakfiets',d:{sp:.25,ac:-.5,wt:1.5,ha:-.5,tr:1,mt:-.25}},{id:'racer',name:'Racer',d:{sp:1,ac:-.5,wt:.25,ha:-.75,tr:-.5}},{id:'brom',name:'Brommer',d:{sp:-.25,ac:.75,wt:-.5,ha:1,mt:.75}}];
 const WHEELS=[{id:'std',name:'Standaard',r:.42,d:{}},{id:'klein',name:'Klein',r:.32,d:{sp:-.5,ac:1,wt:-.25,ha:.5,tr:-.5,mt:.75}},{id:'groot',name:'Groot',r:.56,d:{sp:.25,ac:-.5,wt:.5,ha:-.5,tr:1.5,mt:-.5}}];
@@ -194,7 +182,7 @@ function makeFacadeMaterial(){
 const cityGroup=new THREE.Group();scene.add(cityGroup);
 let cityReady=false;
 async function loadCity(){
-  const meta=await (await fetch('./city.json?v=202610102149')).json();const buf=await (await fetch('./city.bin?v=202610102149')).arrayBuffer();
+  const meta=await (await fetch('./city.json?v=20261010224707')).json();const buf=await (await fetch('./city.bin?v=20261010224707')).arrayBuffer();
   const c=meta.center,pq=meta.pq;
   const mk=(L,kind)=>{const n=L.count;const p16=new Int16Array(buf,L.pos,n*3),uv16=new Int16Array(buf,L.uv,n*2),col=new Uint8Array(buf,L.col,n*4),idx=new Uint32Array(buf,L.idx,L.index);
     const pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[3*i]=p16[3*i]*pq+c[0];pos[3*i+1]=p16[3*i+1]*pq+c[1];pos[3*i+2]=p16[3*i+2]*pq+c[2];}
@@ -272,13 +260,13 @@ TEX.asphalt=canvasTex(256,512,(g,w,h)=>{g.fillStyle='#45474d';g.fillRect(0,0,w,h
 TEX.kerb=canvasTex(64,128,(g,w,h)=>{g.fillStyle='#e8e4dc';g.fillRect(0,0,w,h);g.fillStyle='#d63a3a';g.fillRect(0,0,w,h/2);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(w-6,0,6,h);});
 TEX.chev=canvasTex(256,96,(g,w,h)=>{g.fillStyle='#d63a3a';g.fillRect(0,0,w,h);g.fillStyle='#f6f3ea';for(let k=0;k<3;k++){const x=30+k*72;g.beginPath();g.moveTo(x,10);g.lineTo(x+40,h/2);g.lineTo(x,h-10);g.lineTo(x+20,h-10);g.lineTo(x+60,h/2);g.lineTo(x+20,10);g.closePath();g.fill();}},true);
 function buildKartRoad(tr){const N=tr.N,P=tr.P,NR=tr.NR,D=tr.D,LEN=tr.LEN;
-  // width follows the real street, between 2.2 and 5.5 m on each side, smoothed
-  const raw=(a)=>Float32Array.from(a,v=>clamp(v-.4,2.2,5.5));const sm=a=>{const o=new Float32Array(N);for(let i=0;i<N;i++){let s=0;for(let k=-6;k<=6;k++)s+=a[(i+k+N)%N];o[i]=s/13;}return o;};
+  // width follows the real street, between 1.4 and 5.5 m on each side, smoothed
+  const raw=(a)=>Float32Array.from(a,v=>clamp(v-.5,1.4,5.5));const sm=a=>{const o=new Float32Array(N);for(let i=0;i<N;i++){let s=0;for(let k=-6;k<=6;k++)s+=a[(i+k+N)%N];o[i]=s/13;}return o;};
   const WL=sm(raw(tr.fL)),WR=sm(raw(tr.fR));tr.roadL=WL;tr.roadR=WR;
   const strip=(o1,o2,dy,mat,rep,u0,u1)=>{const pos=[],uv=[],idx=[];const reps=Math.max(1,Math.round(LEN/rep));
     for(let i=0;i<=N;i++){const ii=i%N,p=P[ii],n=NR[ii],a=o1(ii),b=o2(ii),y=tr.hAt(ii)+dy;pos.push(p.x+n.x*a,y,p.z+n.z*a,p.x+n.x*b,y,p.z+n.z*b);const v=D[i]/LEN*reps;uv.push(u0,v,u1,v);if(i<N){const q=i*2;idx.push(q,q+2,q+1,q+1,q+2,q+3);}}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();
-    const m=new THREE.Mesh(geo,mat);m.receiveShadow=true;tr.group.add(m);return m;};
+    const m=new THREE.Mesh(geo,mat);m.receiveShadow=false;tr.group.add(m);return m;};
   const road=new THREE.MeshLambertMaterial({map:TEX.asphalt,side:DS,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
   const kerb=new THREE.MeshLambertMaterial({map:TEX.kerb,side:DS,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});tr.ownMats.push(road,kerb);
   strip(i=>-WL[i],i=>WR[i],.04,road,10,0,1);
@@ -394,9 +382,9 @@ function inWater(x,z){for(const p of waterPolys){if(x<p.x0||x>p.x1||z<p.z0||z>p.
   for(let i=0,j=n-1;i<n;j=i++){const xi=w[2*i],zi=w[2*i+1],xj=w[2*j],zj=w[2*j+1];if((zi>z)!==(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)inside=!inside;}if(inside)return true;}return false;}
 
 /* ================= TRACK BUILD (real streets from OpenStreetMap) ================= */
-const TRACK_IDS=['markt','spil','vis','rond'];
+const TRACK_IDS=['soep','mutua','akerk','acad'];
 const BASE_GUESS=44;
-let TR=null;const DBG={items:{},falls:{},hits:0};
+let TR=null;const DBG={items:{},falls:{},hits:0,walls:0};
 function buildTrack(tid){
   if(TR){scene.remove(TR.group);disposeTree(TR.group);TR.ownMats.forEach(m=>m.dispose());}
   const def=DATA.tracks[tid];srand(hashStr(tid));
@@ -420,11 +408,14 @@ function buildTrack(tid){
   const rampY=new Float32Array(N),rampOf=new Int8Array(N).fill(-1),gap=new Uint8Array(N),ramps=[];
   const nR=def.len>2000?2:1,used=[];
   for(let r=0;r<nR;r++){let best=-1,bs=-1;for(let i=Math.round(N*.12);i<N*.9;i++){if(used.some(u=>Math.abs(u-i)<N*.25))continue;let ok=true,w=99;
-      for(let k=-4;k<12;k++){const j=(i+k+N)%N;w=Math.min(w,fL[j],fR[j]);if(Math.abs(wrapA(ANG[(j+1)%N]-ANG[j]))>.05)ok=false;}if(ok&&w>bs){bs=w;best=i;}}
-    if(best<0||bs<4)continue;used.push(best);const rr={r0:best,ramp:7,gap:0,vy:r===0?11:8,glide:r===0,width:Math.min(bs-.5,6)};ramps.push(rr);
+      for(let k=-4;k<19;k++){const j=(i+k+N)%N;w=Math.min(w,fL[j],fR[j]);if(Math.abs(wrapA(ANG[(j+1)%N]-ANG[j]))>.09)ok=false;}if(ok&&w>bs){bs=w;best=i;}}
+    if(best<0||bs<2.0)continue;used.push(best);const rr={r0:best,ramp:7,gap:0,vy:8.5,glide:false,width:Math.min(bs-.3,6)}; ramps.push(rr); // street circuits: a hop with a trick, no glider
     for(let j=0;j<rr.ramp;j++){const i=(best+j)%N;rampY[i]=2*(j+1)/rr.ramp;rampOf[i]=ramps.length-1;}}
+  // safe cornering speed per sample (karts turn at ~1.9 rad/s), then braking distance backwards along the lap
+  const VS=new Float32Array(N);for(let i=0;i<N;i++){const a=wrapA(ANG[(i+3)%N]-ANG[(i-3+N)%N]);const Rr=Math.abs(a)>1e-3?6*SP/Math.abs(a):999;VS[i]=Math.min(60,1.5*Rr+2);}
+  for(let pass=0;pass<2;pass++)for(let i=N-1;i>=0;i--){const nx=VS[(i+1)%N];VS[i]=Math.min(VS[i],Math.sqrt(nx*nx+2*26*SP));}
   const H=Float32Array.from(def.h||new Array(N).fill(0));
-  const tr={def,id:tid,HW:6,N,P,T,NR,ANG,D,LEN,SP,ST:def.st,group:G,ownMats,latOf,nearest,atDist,fL,fR,bridge,rampY,rampOf,gap,ramps,H,base:0,calibrated:true,hPass:1,hI:0,raw:new Float32Array(N).fill(NaN),anchors:[]};
+  const tr={def,id:tid,HW:6,VS,N,P,T,NR,ANG,D,LEN,SP,ST:def.st,group:G,ownMats,latOf,nearest,atDist,fL,fR,bridge,rampY,rampOf,gap,ramps,H,base:0,calibrated:true,hPass:1,hI:0,raw:new Float32Array(N).fill(NaN),anchors:[]};
   tr.hAt=i=>tr.base+tr.H[i];
   TR=tr;LAPS=def.len>2000?1:def.len>1300?2:3;
   const anchor=(o,i,dy)=>{tr.anchors.push({o,i,dy});G.add(o);return o;};
@@ -673,7 +664,7 @@ let isTouch=(window.matchMedia&&matchMedia('(pointer: coarse)').matches)||('onto
 if(settings.autoGas==null)settings.autoGas=isTouch;
 if(settings.smart==null)settings.smart=isTouch;
 if(settings.detail==null||settings.detail>3)settings.detail=isTouch?1:3;
-const sel=store.get('sel',{ci:0,bi:0,wi:0,cc:2});
+const sel=store.get('sel',{ci:0,bi:0,wi:0,cc:2});if(!(sel.ci<CHARS.length))sel.ci=0;
 const input={up:false,down:false,left:false,right:false,drift:false,tl:false,tr:false,tb:false,td:false,driftEdge:false};
 
 function makeKart(cfg,id){const st=statsOf(cfg.ci,cfg.bi,cfg.wi);const v=makeKartMesh(cfg.ci,cfg.bi,cfg.wi);
@@ -711,16 +702,15 @@ function startRace(cfg){
   order.forEach((id,slot)=>{const k=karts[id];const row=slot>>1,idx=(N-4-row*4+N)%N;const lat=cfg.mode==='tt'?0:clamp(slot%2?2.4:-2.4,-TR.fL[idx]+1.2,TR.fR[idx]-1.2);resetKartState(k,idx,lat);});
   karts.forEach(k=>{k.vbase=CCS[cfg.cc].v*(1+(k.ai?.02:.035)*(k.st.sp-3));});
   if(cfg.mode==='tt'){player.item='koffie3';player.itemCount=3;
-    const g=store.get('ghost-'+TRACK_IDS[cfg.track],null);ghost=g&&g.f&&g.f.length?g:null;
+    const g=store.get('ghost-'+TRACK_IDS[cfg.track],null);ghost=g&&g.f&&g.f.length&&g.ci<CHARS.length?g:null;
     if(ghost){ghostMesh=makeKartMesh(ghost.ci,ghost.bi,ghost.wi,true);}
     ghostRec={ci:sel.ci,bi:sel.bi,wi:sel.wi,f:[]};recT=0;}else{ghost=null;ghostRec=null;}
   raceTime=0;introT=2.6;countT=3.2;lastBeep=9;finishTimer=0;paused=false;
   loadT=0;state='loading';screenLoading();$('#hud').hidden=false;$('#posOf').textContent='/ '+karts.length;
   hudCache={};setSlot('','empty',false,0);streetShown='';
 }
-function makeRoster(){ // 12 racers: you, every housemate, then random Stadjers
-  const all=CHARS.map((c,i)=>i).filter(i=>i!==sel.ci);const mates=all.filter(i=>CHARS[i].custom),rest=all.filter(i=>!CHARS[i].custom).sort(()=>R()-.5);
-  const others=mates.concat(rest).slice(0,11);const ros=[{ci:sel.ci,bi:sel.bi,wi:sel.wi,ai:false}];
+function makeRoster(){ // you plus every other housemate
+  const others=CHARS.map((c,i)=>i).filter(i=>i!==sel.ci);const ros=[{ci:sel.ci,bi:sel.bi,wi:sel.wi,ai:false}];
   const rivals=new Set([others[(R()*others.length)|0],others[(R()*others.length)|0]]);
   others.forEach(ci=>ros.push({ci,bi:(R()*BODIES.length)|0,wi:(R()*WHEELS.length)|0,ai:true,skill:rivals.has(ci)?1.01+R()*.025:.95+R()*.05}));return ros;}
 
@@ -870,17 +860,21 @@ function aiControl(k,dt){
   // dodge hazards ahead
   for(const h of hazards){const df=(h.i-k.idx+N)%N;if(df<14&&Math.abs(h.lat-k.lane)<2.8){k.lane=h.lat+(h.lat>0?-4.2:4.2);k.laneT=1.5;}}
   for(const pd of TR.pads){const df=(pd.i-k.idx+N)%N;if(df<20&&df>3&&R()<.02*k.skill)k.lane=pd.s;}
-  const look=Math.round(9+Math.abs(k.speed)*.32);const ti=(k.idx+look)%N;
+  const look=Math.round(4+Math.abs(k.speed)*.26);const ti=(k.idx+look)%N;
   let mL=99,mR=99;for(let j=0;j<=look;j+=3){const q=(k.idx+j)%N;mL=Math.min(mL,TR.fL[q]);mR=Math.min(mR,TR.fR[q]);}if(k.stuckT>.8)k.lane=0;
-  const turnA=Math.abs(wrapA(TR.ANG[ti]-TR.ANG[k.idx]));const lane=clamp(k.lane*(turnA>.45?.2:1),-Math.max(0,mL-1.5),Math.max(0,mR-1.5));const tx=TR.P[ti].x+TR.NR[ti].x*lane,tz=TR.P[ti].z+TR.NR[ti].z*lane;
-  let diff=wrapA(Math.atan2(tx-k.x,tz-k.z)-k.yaw);if(k.inkT>0)diff+=Math.sin(raceTime*3+k.id)*.25;
+  const turnA=Math.abs(wrapA(TR.ANG[ti]-TR.ANG[k.idx]));const lane=clamp(k.lane*(turnA>.45?.2:1),-Math.max(0,mL-1.5),Math.max(0,mR-1.5));
+  // follow the racing line: heading of the line just ahead plus a correction for the sideways error (Stanley steering)
+  const hi=(k.idx+2+Math.round(Math.abs(k.speed)*.08))%N,e=TR.latOf(k.idx,k.x,k.z)-lane;
+  let diff=wrapA(TR.ANG[hi]-k.yaw)+Math.atan2(1.6*e,Math.abs(k.speed)+3);if(k.inkT>0)diff+=Math.sin(raceTime*3+k.id)*.25;
   const curv=Math.abs(wrapA(TR.ANG[(k.idx+26)%N]-TR.ANG[k.idx]));
   if(k.cv>.55&&curv<.3&&R()<(k.skill-.8)*1.5)boostK(k,.55);k.cv=curv;
   const behind=(player.prog-k.prog)*TR.SP;const rub=k===player||race.mode==='tt'?1:1+clamp(behind/800,-.08,.12);
-  k.aiMul=(k===player?1:CCS[race.cc].ai*k.skill)*rub*(1-Math.min(.3,curv*.31))*(k.inkT>0?.93:1);
+  k.aiMul=(k===player?1:CCS[race.cc].ai*k.skill)*rub*(k.inkT>0?.93:1);
+  // brake for the corners ahead (speed profile), a little braver when skilled
+  let vt=99;for(let j=1;j<=6;j++)vt=Math.min(vt,TR.VS[(k.idx+j)%N]);vt*=.96+.08*(k.skill-.95)/.1;
   // items
   if(k.item&&k.roll<=0){k.itemHold-=dt;aiItems(k);}
-  return{gas:true,brake:false,steer:clamp(diff*2.4,-1,1),drift:false,driftPress:false};}
+  return{gas:k.speed<vt,brake:k.speed>vt+.8,steer:clamp(diff*2.4,-1,1),drift:false,driftPress:false};}
 function aiItems(k){const key=k.item,N=TR.N;if(k.itemHold>0&&key!=='goud')return;
   const ahead=o=>o!==k&&o.respawn<=0&&o.prog-k.prog>2&&o.prog-k.prog<34&&Math.abs(TR.latOf(o.idx,o.x,o.z)-TR.latOf(k.idx,k.x,k.z))<3.5;
   const behind=n=>karts.some(o=>o!==k&&k.prog-o.prog>1&&k.prog-o.prog<n);
@@ -941,7 +935,7 @@ function updateKart(k,dt,inp){
     else if(c>1.6){boostK(k,.95*m);if(k===player){showMsg('Super-turbo!',.7,true);beep(700,.18,'triangle',.07);}}
     else if(c>.8){boostK(k,.55*m);if(k===player)beep(600,.12,'triangle',.06);}}
     k.drift=0;k.charge=0;}
-  const sf=Math.min(1,Math.abs(k.speed)/8)*(k.speed<0?-1:1);
+  const sf=Math.min(1,Math.abs(k.speed)/3.5)*(k.speed<0?-1:1); // tight turns at walking pace, like a real kart
   let yr;if(k.drift){const s2=steer*k.driftDir;yr=k.driftDir*(1.1+.55*s2)*(k.turn*.8);k.charge+=dt*k.mt*(1+.6*Math.max(0,s2));}
   else yr=steer*(k.turn+.3-Math.min(.5,Math.abs(k.speed)/80))*(k.air?(k.glide?.7:.35):1);
   k.yaw=wrapA(k.yaw+yr*sf*dt);
@@ -965,14 +959,14 @@ function updateKart(k,dt,inp){
   const s=TR.latOf(k.idx,k.x,k.z);const smart=k===player&&settings.smart;
   if(!k.air&&TR.gap[k.idx]){fall(k);return;}
   const wn=collideCircle(k,(k.shrinkT>0?.5:.82)*(CHARS[k.cfg.ci].size||1));
-  if(wn&&!k.air&&k.wallCD<=0){const into=-(Math.sin(k.moveYaw)*wn.x+Math.cos(k.moveYaw)*wn.z);if(into>.3){k.speed*=1-.5*into;k.wallCD=.3;if(k===player)beep(90,.12,'square',.05);}}
+  if(wn&&!k.air&&k.wallCD<=0){const into=-(Math.sin(k.moveYaw)*wn.x+Math.cos(k.moveYaw)*wn.z);if(into>.3){k.speed*=1-.5*into;k.wallCD=.3;DBG.walls++;if(k===player)beep(90,.12,'square',.05);}}
   if(wn)k.speed*=Math.max(0,1-1.2*dt);
   if(!TR.bridge[k.idx]&&(!k.air||k.y<.6)&&inWater(k.x,k.z)){if(smart){k.x=k.px;k.z=k.pz;k.speed*=.5;}else{fall(k);return;}}
   if(Math.abs(s)>24){fall(k,true);return;}
   // stuck against a wall: a sloep-crew (or for AI: a quick hop) puts you back on the route
   if(racing&&!stunned&&!k.air&&Math.abs(k.speed)<3&&(gas||k.ai)){k.stuckT=(k.stuckT||0)+dt;}else k.stuckT=Math.max(0,(k.stuckT||0)-dt*2);
   if(racing&&!k.finished){k.pcT=(k.pcT||0)+dt;if(k.pcT>1.6){if(k.prog-(k.pcProg??-1e9)<2&&!stunned&&k.trainT<=0)k.stuckT=99;k.pcT=0;k.pcProg=k.prog;}}
-  if(k.stuckT>(k.ai||k.autopilot?2.5:5)){k.stuckT=0;const j=(k.idx+3)%N;k.prog+=3;k.idx=j;k.x=TR.P[j].x;k.z=TR.P[j].z;k.yaw=k.moveYaw=TR.ANG[j];k.speed=4;if(k===player)showMsg('Terug op de baan',1,true);}
+  if(k.stuckT>(k.ai||k.autopilot?2.5:5)){k.stuckT=0;DBG.stuck=(DBG.stuck||0)+1;(DBG.stuckAt=DBG.stuckAt||[]).push(TR.id+':'+k.idx);const j=(k.idx+3)%N;k.prog+=3;k.idx=j;k.x=TR.P[j].x;k.z=TR.P[j].z;k.yaw=k.moveYaw=TR.ANG[j];k.speed=4;if(k===player)showMsg('Terug op de baan',1,true);}
   // pads
   if(!k.air)for(const pd of TR.pads){const di=Math.abs(((k.idx-pd.i+N+N/2)%N)-N/2);if(di<=2&&Math.abs(s-pd.s)<2.1&&k.boost<.6){boostK(k,pd.big?1.2:.9);if(k===player)beep(480,.16,'triangle',.06);}}
   // laps / finish
@@ -995,7 +989,7 @@ function collide(){
 
 function updatePickups(dt){
   for(const b of TR.boxes){if(race.mode==='tt')break;if(!b.on){b.t-=dt;if(b.t<=0){b.on=true;b.m.visible=true;}continue;}
-    b.m.rotation.y+=dt*1.4;b.m.position.y=1.4+Math.sin(raceTime*3+b.ph)*.18;
+    b.m.rotation.y+=dt*1.4;b.m.position.y=TR.hAt(b.i)+1.3+Math.sin(raceTime*3+b.ph)*.18;
     for(const k of karts){if(k.respawn>0||k.trainT>0)continue;const dx=k.x-b.x,dz=k.z-b.z;if(dx*dx+dz*dz<5.3&&k.y<3){b.on=false;b.m.visible=false;b.t=2.5;giveItem(k);break;}}}
   for(const c of TR.coins){if(!c.on){c.t-=dt;if(c.t<=0){c.on=true;c.m.visible=true;}continue;}c.m.rotation.y+=dt*3;
     for(const k of karts){if(k.respawn>0)continue;const dx=k.x-c.x,dz=k.z-c.z;if(dx*dx+dz*dz<3.6&&k.y<3){c.on=false;c.m.visible=false;c.t=9;if(k.coins<10)k.coins++;boostK(k,.12);if(k===player)beep(1320,.06,'square',.04);break;}}}}
@@ -1088,7 +1082,7 @@ function toMenu(){state='menu';paused=false;clearItems();karts.forEach(k=>{dropH
   if(ghostMesh){disposeKartMesh(ghostMesh);ghostMesh=null;}$('#hud').hidden=true;$('#rain').style.opacity='0';$('#msg').classList.remove('show');}
 function screenTitle(){toMenu();menuCam='orbit';removePreview();
   showOverlay(`<div class="panel"><h1 class="logo">Grunn <span>Kart</span></h1>
-   <p class="lede">Kartracen door Groningen. Vier banen, twaalf Stadjers, zeventien items.</p>
+   <p class="lede">Kartracen door Groningen. Vier banen, zeven huisgenoten, zeventien items.</p>
    <div class="btns">
     <button class="btn primary" id="bGP">Grand Prix<small>Diepbeker: vier banen, punten, podium</small></button>
     <button class="btn" id="bVS">Losse race<small>Kies één baan</small></button>
@@ -1103,7 +1097,7 @@ function screenCC(){showOverlay(`<div class="panel"><p class="eyebrow">${race.mo
   onAll('[data-cc]',el=>{sel.cc=+el.dataset.cc;race.cc=sel.cc;store.set('sel',sel);screenChar();});on('bBack',screenTitle);}
 function screenChar(){menuCam='orbit';removePreview();
   showOverlay(`<div class="panel"><p class="eyebrow">Stap 1 van 2</p><h2>Kies je coureur</h2>
-   <div class="chars">${CHARS.map((c,i)=>`<button class="ch${i===sel.ci?' sel':''}" data-ci="${i}">${portrait(i)}<span>${c.name.replace(' de Meeuw','')}</span><em>${WCLS[c.w].name}</em></button>`).join('')}</div>
+   <div class="chars">${CHARS.map((c,i)=>`<button class="ch${i===sel.ci?' sel':''}" data-ci="${i}">${portrait(i)}<span>${c.name}</span><em>${WCLS[c.w].name}</em></button>`).join('')}</div>
    <p class="fine" id="chInfo"></p>
    <div class="navrow"><button class="back" id="bBack">Terug</button><button class="btn primary" id="bNext">Kart kiezen</button></div></div>`);
   const info=()=>{const c=CHARS[sel.ci];$('#chInfo').textContent=`${c.name}, ${c.role.toLowerCase()}. ${WCLS[c.w].name}: ${c.w==='L'?'snel op gang en wendbaar, maar je wordt makkelijk weggeduwd.':c.w==='Z'?'hoge topsnelheid en je duwt anderen opzij, maar trager op gang.':'overal gemiddeld.'}`;};info();
@@ -1268,9 +1262,9 @@ function render(){camera.updateMatrixWorld();
 /* ================= BOOT ================= */
 resize();
 $('#touch').hidden=!isTouch;
-fetch('./groningen-bag.json?v=202610102149').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
+fetch('./groningen-bag.json?v=20261010224707').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
   applyDetail();screenTitle();loadCity().catch(e=>{console.error(e);showMsg('Stad laden mislukt',3,true);});
   window.__gk={get karts(){return karts;},get player(){return player;},get state(){return state;},get TR(){return TR;},get gp(){return gp;},startRace,screenResults,sel,setGP:g=>{gp=g;},makeRoster,
-    get raceTime(){return raceTime;},DBG,collideCircle,inWater};
+    get raceTime(){return raceTime;},DBG,collideCircle,inWater,aiControl};
   requestAnimationFrame(frame);
 }).catch(e=>{showOverlay(`<div class="panel"><h2>Laden mislukt</h2><p class="fine">De stratenkaart kon niet worden geladen (${String(e).slice(0,120)}). Ververs de pagina.</p></div>`);});
