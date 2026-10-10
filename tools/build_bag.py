@@ -97,6 +97,7 @@ class Buf:
         s.pos.extend(pts3); s.uv.extend(uvs); s.col.extend([col] * n); s.sty.extend([sty] * n)
         s.idx.extend(int(t) + base for t in tri)
 walls, rpitch, rflat = Buf(), Buf(), Buf()
+vindicat_info = None
 footprints = []
 landmarks = []
 nb = 0
@@ -131,8 +132,34 @@ for f in files:
         floorH = min(4.2, max(2.6, (roofmin - mv) / max(1, floors)))
         year = att.get('oorspronkelijkbouwjaar')
         sty, col = style_for(year, floors, top - mv)
+        is_vindicat = bid == 'NL.IMBAG.Pand.0014100022188032'   # sociëteit Mutua Fides, Grote Markt oostzijde
+        if is_vindicat: sty, col = 5, (116, 52, 40); floorH = max(3.6, (roofmin - mv) / 6)
         rcol = random.choice(ROOF_TILE[:3] if (year or 2000) < 1960 and random.random() < .7 else ROOF_TILE[3:])
         if sty == 4: rcol = (88, 120, 108)  # green copper / slate for monuments
+        if is_vindicat:
+            fp = []
+            for g in geoms:
+                sem = g.get('semantics', {}); surfs = sem.get('surfaces', []); vals = sem.get('values', [[]])[0]
+                for si, su in enumerate(g['boundaries'][0]):
+                    if vals and vals[si] is not None and surfs[vals[si]]['type'] == 'GroundSurface':
+                        fp.append([tuple(map(float, G[v])) for v in su[0]])
+            # facade on the market: longest footprint edge whose outward side faces the middle of the Grote Markt
+            gm = (-40.0, 10.0); best = None
+            allp = [q for ring in fp for q in ring]; ccx = sum(q[0] for q in allp) / len(allp); ccz = sum(q[1] for q in allp) / len(allp)
+            for ring in fp:
+                for a, b in zip(ring, ring[1:] + ring[:1]):
+                    L = math.dist(a, b)
+                    if L < 4: continue
+                    mx, mz = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+                    nx, nz = -(b[1] - a[1]) / L, (b[0] - a[0]) / L
+                    if nx * (mx - ccx) + nz * (mz - ccz) < 0: nx, nz = -nx, -nz
+                    face = nx * (gm[0] - mx) + nz * (gm[1] - mz)
+                    if face > 0 and (best is None or L > best[0]): best = (L, a, b, nx, nz)
+            if best:
+                L, a, b, nx, nz = best
+                vindicat_info = {'a': [round(a[0], 2), round(a[1], 2)], 'b': [round(b[0], 2), round(b[1], 2)], 'n': [round(nx, 3), round(nz, 3)],
+                                 'mv': round(mv, 2), 'top': round(top, 2), 'floorH': round(floorH, 2), 'floors': floors}
+                print('vindicat facade', vindicat_info)
         if top - mv > 60: landmarks.append({'x': round(float(cx), 1), 'z': round(float(cz), 1), 'h': round(top - mv, 1), 'year': year})
         for g in geoms:
             sem = g.get('semantics', {}); surfs = sem.get('surfaces', []); vals = sem.get('values', [[]])[0]
@@ -269,7 +296,7 @@ meta = {'center': [float(c) for c in cen], 'pq': PQ, 'layout': layout, 'bytes': 
         'grid': {'x0': round(float(minx), 2), 'z0': round(float(minz), 2), 'step': STEP, 'nx': nx, 'nz': nz, 'h': grid},
         'pdok': {'url': 'https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:28992/{z}/{x}/{y}.jpeg', 'tl': TL,
                  'hi': {'level': 15, 'span': span_l(15), 'tiles': hi}, 'lo': {'level': 13, 'span': span_l(13), 'tiles': lo}},
-        'landmarks': landmarks}
+        'landmarks': landmarks, 'vindicat': vindicat_info}
 json.dump(meta, open(os.path.join(OUT, 'city.json'), 'w'), separators=(',', ':'))
 print('city.bin MB', round(len(blob) / 1e6, 2), 'city.json KB', round(os.path.getsize(os.path.join(OUT, 'city.json')) / 1e3))
 print('landmarks', landmarks)

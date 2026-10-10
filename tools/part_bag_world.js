@@ -22,6 +22,8 @@ const MAXANISO=renderer.capabilities.getMaxAnisotropy?renderer.capabilities.getM
 function applyDetail(){const d=DETAIL[settings.detail];renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,d.pr));resize();
   sun.castShadow=d.shadow>0;if(d.shadow){sun.shadow.mapSize.set(d.shadow,d.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}}
 function startTiles(){}
+// screenshot helper: window.__gkCam=[x,y,z,lookX,lookY,lookZ] pins the camera
+function debugCam(){const c=window.__gkCam;if(c){camera.position.set(c[0],c[1],c[2]);camera.lookAt(c[3],c[4],c[5]);camera.updateMatrixWorld();}}
 function probe(){return null;}
 
 /* textures + shared materials (colour textures in sRGB) */
@@ -52,7 +54,7 @@ function disposeTree(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose();});}
 const FCELL=256;
 function drawFacades(g,mask){const W=FCELL;
   const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x,y,w,h);};
-  for(let s=0;s<5;s++)for(let row=0;row<2;row++){const X=s*W,Y=(1-row)*W; // row 1 (upper) is drawn at the top of the canvas
+  for(let s=0;s<6;s++)for(let row=0;row<2;row++){const X=s*W,Y=(1-row)*W; // row 1 (upper) is drawn at the top of the canvas
     const wall=mask?'#ffffff':'#f2eee8';const win=mask?'#000':'#2c3a44',frame=mask?'#000':'#f4f1ea',glass2=mask?'#000':'#3d5463';
     R(X,Y,W,W,wall);
     if(!mask){ // wall material texture
@@ -71,13 +73,24 @@ function drawFacades(g,mask){const W=FCELL;
     else if(s===3){ // modern glass
       R(X,Y,W,W,glass2);for(let x=0;x<W;x+=85)R(X+x,Y,6,W,mask?'#000':'#cfd6da');R(X,Y,W,8,mask?'#000':'#cfd6da');
       if(!mask){const gr=g.createLinearGradient(X,Y,X+W,Y+W);gr.addColorStop(0,'rgba(255,255,255,.22)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(X,Y,W,W);}}
+    else if(s===5){ // sociëteit Mutua Fides: ornamental brickwork, tall bronze-framed windows, stone plinth
+      const brz=mask?'#000':'#4a3a2c',gl=mask?'#000':'#26323a',stone=mask?'#000':'#d8d0c0',rev=mask?'#fff':'rgba(0,0,0,.28)';
+      if(!mask){for(let y=0;y<W;y+=7){g.fillStyle='rgba(0,0,0,.10)';g.fillRect(X,Y+y,W,1);for(let x=((y/7)%2)*11;x<W;x+=22)g.fillRect(X+x,Y+y,1,7);}
+        // soldier course + diamond relief band at the top of every storey, pilaster strips at the bay edges
+        g.fillStyle='rgba(0,0,0,.16)';for(let x=0;x<W;x+=8)g.fillRect(X+x,Y+4,1,16);g.fillRect(X,Y+20,W,2);
+        g.fillStyle='rgba(255,255,255,.08)';for(let x=8;x<W;x+=32){g.beginPath();g.moveTo(X+x,Y+28);g.lineTo(X+x+8,Y+34);g.lineTo(X+x,Y+40);g.lineTo(X+x-8,Y+34);g.fill();}
+        g.fillStyle='rgba(0,0,0,.12)';g.fillRect(X,Y,10,W);g.fillRect(X+W-10,Y,10,W);}
+      if(row===1){R(X+62,Y+50,132,196,rev);R(X+70,Y+54,116,188,brz);R(X+78,Y+62,100,82,gl);R(X+78,Y+152,100,82,gl);
+        if(!mask){g.fillStyle='rgba(255,255,255,.12)';g.fillRect(X+84,Y+66,22,74);}}
+      else{R(X+40,Y+30,176,200,rev);R(X+46,Y+34,164,192,brz);R(X+54,Y+42,148,176,gl);R(X,Y+226,W,30,stone);
+        if(!mask){g.fillStyle='rgba(255,220,150,.10)';g.fillRect(X+54,Y+42,148,176);}}}
     else{ // stone / church: narrow arched windows
       const ax=X+98,aw=60;R(ax,Y+60,aw,150,win);g.fillStyle=win;g.beginPath();g.arc(ax+aw/2,Y+60,aw/2,Math.PI,0);g.fill();R(ax+aw/2-2,Y+30,4,180,mask?'#000':'#5a5148');}
   }}
 let facadeMat=null;
 function makeFacadeMaterial(){
-  const atlas=canvasTex(FCELL*5,FCELL*2,(g)=>drawFacades(g,false));atlas.wrapS=atlas.wrapT=THREE.ClampToEdgeWrapping;
-  const mask=canvasTex(FCELL*5,FCELL*2,(g)=>drawFacades(g,true),true,true);
+  const atlas=canvasTex(FCELL*6,FCELL*2,(g)=>drawFacades(g,false));atlas.wrapS=atlas.wrapT=THREE.ClampToEdgeWrapping;
+  const mask=canvasTex(FCELL*6,FCELL*2,(g)=>drawFacades(g,true),true,true);
   const m=new THREE.MeshLambertMaterial({color:0xffffff,side:DS});
   m.onBeforeCompile=sh=>{sh.uniforms.gkAtlas={value:atlas};sh.uniforms.gkMask={value:mask};
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 fuv;attribute vec4 gkc;varying vec2 vFuv;varying vec3 vTint;varying float vStyle;')
@@ -85,8 +98,8 @@ function makeFacadeMaterial(){
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D gkAtlas;uniform sampler2D gkMask;varying vec2 vFuv;varying vec3 vTint;varying float vStyle;')
       .replace('#include <map_fragment>',`
         vec2 cell=fract(vFuv);float row=vFuv.y<1.0?0.0:1.0;
-        vec2 auv=vec2((vStyle+cell.x*0.96+0.02)/5.0,(row+cell.y*0.96+0.02)/2.0);
-        vec2 gx=dFdx(vFuv)/vec2(5.0,2.0),gy=dFdy(vFuv)/vec2(5.0,2.0);
+        vec2 auv=vec2((vStyle+cell.x*0.96+0.02)/6.0,(row+cell.y*0.96+0.02)/2.0);
+        vec2 gx=dFdx(vFuv)/vec2(6.0,2.0),gy=dFdy(vFuv)/vec2(6.0,2.0);
         vec4 ft=textureGrad(gkAtlas,auv,gx,gy);float fm=textureGrad(gkMask,auv,gx,gy).r;
         diffuseColor.rgb*=mix(ft.rgb,ft.rgb*vTint*1.15,fm);`);};
   return m;}
@@ -109,7 +122,7 @@ async function loadCity(){
   const rp=new THREE.Mesh(mk(meta.layout.roofPitched,'roof'),new THREE.MeshLambertMaterial({map:TEX.roofTile,vertexColors:true,side:DS}));
   const rf=new THREE.Mesh(mk(meta.layout.roofFlat,'roof'),new THREE.MeshLambertMaterial({map:TEX.roofFlat,vertexColors:true,side:DS}));
   [walls,rp,rf].forEach(m=>{m.castShadow=true;m.receiveShadow=true;cityGroup.add(m);});
-  buildGround(meta);buildProps(meta);
+  buildGround(meta);buildProps(meta);if(meta.vindicat)buildVindicat(meta.vindicat);
   CITY=meta;cityReady=true;}
 
 /* ---- terrain + PDOK aerial photo ---- */
@@ -193,3 +206,27 @@ function buildKartRoad(tr){const N=tr.N,P=tr.P,NR=tr.NR,D=tr.D,LEN=tr.LEN;
     const b=new THREE.Mesh(new THREE.PlaneGeometry(2.6,1),cm);b.position.set(x,y+1.5,z);b.rotation.y=tr.ANG[j]+Math.PI;if(side<0)b.scale.x=-1;tr.group.add(b);
     for(const s of[-1,1]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,1.5,6),pm);post.position.set(x+tr.T[j].x*0+Math.cos(tr.ANG[j])*s*1.1,y+.75,z-Math.sin(tr.ANG[j])*s*1.1);tr.group.add(post);}}
 }
+
+/* ---- sociëteit Mutua Fides (Vindicat), Grote Markt oostzijde: entrance, name, balcony and lanterns on the market facade ---- */
+function buildVindicat(v){const g=new THREE.Group();const a=v.a,b=v.b,n=v.n;const L=Math.hypot(b[0]-a[0],b[1]-a[1]);const tx=(b[0]-a[0])/L,tz=(b[1]-a[1])/L;
+  const mx=(a[0]+b[0])/2,mz=(a[1]+b[1])/2,y0=v.mv,fh=v.floorH;
+  // local frame: x along the facade, z out towards the market
+  g.position.set(mx,y0,mz);g.rotation.y=Math.atan2(n[0],n[1]);
+  const M=c=>new THREE.MeshLambertMaterial({color:c});const stone=M('#d8d0c0'),wood=M('#3b2618'),metal=M('#2a2622'),gold=new THREE.MeshPhongMaterial({color:'#d4a63a',shininess:90,specular:0xffffff});
+  const box=(w,h,d,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;g.add(o);return o;};
+  // monumental entrance with stone surround, double doors and steps
+  box(4.2,.35,.5,stone,0,4.4,.25);box(.45,4.4,.5,stone,-1.9,2.2,.25);box(.45,4.4,.5,stone,1.9,2.2,.25);
+  box(3.3,4.0,.12,wood,0,2.0,.06);box(.05,3.6,.14,metal,0,2.0,.13);for(const s of[-1,1])box(.06,.5,.08,gold,s*.25,1.6,.17);
+  box(5,.16,.9,stone,0,.08,.45);box(4.4,.16,.55,stone,0,.24,.3);
+  // name above the door
+  const sg=canvasTex(1024,128,(c,w,h)=>{c.fillStyle='#1f1a16';c.fillRect(0,0,w,h);c.fillStyle='#d4a63a';c.font='600 84px Georgia,"Times New Roman",serif';c.textAlign='center';c.textBaseline='middle';c.fillText('MUTUA FIDES',w/2,h/2+4,w-60);},true);
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.7),new THREE.MeshBasicMaterial({map:sg}));sign.position.set(0,5.1,.52);g.add(sign);
+  // balcony overlooking the Grote Markt
+  const by=fh*2+.1;box(Math.min(10,L*.42),.28,1.5,stone,0,by,.75);
+  for(let i=0;i<=24;i++){const x=-Math.min(10,L*.42)/2+.2+i*(Math.min(10,L*.42)-.4)/24;box(.05,1.05,.05,metal,x,by+.66,1.42);}
+  box(Math.min(10,L*.42),.07,.08,metal,0,by+1.18,1.42);for(const s of[-1,1])box(.07,1.05,1.45,metal,s*Math.min(10,L*.42)/2,by+.66,.75);
+  // lanterns by the door
+  const glow=new THREE.MeshBasicMaterial({color:'#ffd98a'});for(const s of[-1,1]){box(.08,.5,.25,metal,s*2.6,3.2,.15);const l=new THREE.Mesh(new THREE.BoxGeometry(.32,.5,.32),glow);l.position.set(s*2.6,3.05,.38);g.add(l);box(.4,.06,.4,metal,s*2.6,3.33,.38);}
+  // cornice under the penthouse
+  box(L*.98,.35,.4,stone,0,(v.top-v.mv)-3.6,.2);
+  cityGroup.add(g);}

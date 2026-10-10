@@ -32,7 +32,7 @@ rep("""function render(){camera.updateMatrixWorld();if(tiles){tiles.setCamera(ca
   const f=player&&state!=='menu'?player:{x:camera.position.x,z:camera.position.z,idx:0};const fy=TR?TR.hAt(f.idx||0):0;
   sun.target.position.set(f.x,fy,f.z);sun.position.set(f.x+60,fy+110,f.z-40);sun.target.updateMatrixWorld();
   attrT-=1/60;if(attrT<=0){attrT=.5;pumpAerial();unloadFarAerial();}
-  renderer.render(scene,camera);}""")
+  debugCam();renderer.render(scene,camera);}""")
 # no key needed: boot straight into the menu
 rep("  const key=store.get('key','');if(key){startTiles(key);screenTitle();}else screenKey('');",
     "  applyDetail();screenTitle();loadCity().catch(e=>{console.error(e);showMsg('Stad laden mislukt',3,true);});")
