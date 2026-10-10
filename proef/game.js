@@ -17,6 +17,7 @@ function fmt1(t){const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.
 let LAPS=3;const SIDE=3, CANAL=16, FARQ=4, GRASS=8, RAMPH=2.0;
 const PTS=[15,12,10,9,8,7,6,5,4,3,2,1];
 const CHARS=[
+ {name:'Chillvijn',w:'M',role:'Huisgenoot',suit:'#f6f4ef',skin:'#efc2a4',hat:'messy',hatC:'#9a7650',kart:'#f2c61f',emblem:{text:'W',color:'#6d3fa0'},brows:'#7a5a3c',mouth:'pout',stubble:'#b78a6c',shades:true,tie:['#1d3c8f','#8cc8ec'],necklace:true,custom:true},
  {name:'Sherminator',w:'M',role:'Huisgenoot',suit:'#f4f2ee',skin:'#f1c9b0',hat:'swoop',hatC:'#8a5e3a',kart:'#8cc8ec',pattern:'stripes',dotC:'#1d3c8f',brows:'#6e4a2e',smile:'soft',blush:true,bigEyes:true,custom:true},
  {name:'Bullebak',w:'Z',driverSize:1.3,role:'Huisgenoot',suit:'#1b2a4a',band:'#f2f0ea',straps:'#2f3d2c',skin:'#efc6ad',hat:'slick',hatC:'#3a271c',kart:'#6d3fa0',brows:'#3a271c',angry:true,mouth:'frown',custom:true},
  {name:'Mouthbreather',w:'Z',role:'Huisgenoot',suit:'#1f5f5b',skin:'#ebc3a6',hat:'curls',hatC:'#2b1c14',kart:'#6b4226',pattern:'dots',dotC:'#d63a3a',brows:'#2b1c14',smile:true,custom:true},
@@ -182,7 +183,7 @@ function makeFacadeMaterial(){
 const cityGroup=new THREE.Group();scene.add(cityGroup);
 let cityReady=false;
 async function loadCity(){
-  const meta=await (await fetch('./city.json?v=202610102046')).json();const buf=await (await fetch('./city.bin?v=202610102046')).arrayBuffer();
+  const meta=await (await fetch('./city.json?v=202610102055')).json();const buf=await (await fetch('./city.bin?v=202610102055')).arrayBuffer();
   const c=meta.center,pq=meta.pq;
   const mk=(L,kind)=>{const n=L.count;const p16=new Int16Array(buf,L.pos,n*3),uv16=new Int16Array(buf,L.uv,n*2),col=new Uint8Array(buf,L.col,n*4),idx=new Uint32Array(buf,L.idx,L.index);
     const pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[3*i]=p16[3*i]*pq+c[0];pos[3*i+1]=p16[3*i+1]*pq+c[1];pos[3*i+2]=p16[3*i+2]*pq+c[2];}
@@ -431,10 +432,19 @@ function makeKartMesh(ci,bi,wi,ghost){
     add(shell([[-1.0,.3],[.85,.3],[1.05,.32,1.0,.6],[.9,1.25],[.78,1.32,.7,1.2],[.55,.55],[-.6,.62],[-1.0,.72,-1.05,.45]],.62,.12),kc,0,0,0);
     add(new THREE.CapsuleGeometry(.13,.9,6,12),dk,0,1.5,.86).rotation.z=Math.PI/2;
     add(new THREE.SphereGeometry(.13,12,10),Mt('#fff7c0',true),0,1.18,1.02);drvY=1.62;drvZ=-.2;wheelBase=[.88,-.82];track=0;}
+  if(ch.emblem){const E={stad:[.72,1.15,-1.43],bak:[.86,1.77,0],racer:[.62,1.3,-1.45],brom:[.98,1.13,-.2]}[body];
+    const et=canvasTex(128,128,(g2)=>{g2.clearRect(0,0,128,128);g2.fillStyle=ch.emblem.color;g2.font='900 112px "Bowlby One","Arial Black",sans-serif';g2.textAlign='center';g2.textBaseline='middle';g2.fillText(ch.emblem.text,64,70);},true);
+    const em=new THREE.MeshBasicMaterial({map:et,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});mats.push(em);
+    const d=add(new THREE.PlaneGeometry(.62,.62),em,0,E[0],E[1]);d.rotation.x=E[2];}
   // driver
   const drv0=bodyG.children.length;
   const suit=Mt(ch.suit),skin=Mt(ch.skin),hat=Mt(ch.hatC,false,{shininess:70}),eye=Mt('#101418');
   add(new THREE.CapsuleGeometry(.3,.3,6,14),suit,0,drvY-.55,drvZ);
+  if(ch.tie){const tt=stripeTexture(ch.tie[0],ch.tie[1]);const tm2=new THREE.MeshPhongMaterial({map:tt,shininess:60});mats.push(tm2);
+    const ts=new THREE.Shape();ts.moveTo(-.06,0);ts.lineTo(.06,0);ts.lineTo(.09,-.36);ts.lineTo(0,-.46);ts.lineTo(-.09,-.36);ts.closePath();
+    const tie=add(new THREE.ShapeGeometry(ts),tm2,0,drvY-.33,drvZ+.305);tie.rotation.x=-.12;add(new THREE.SphereGeometry(.06,10,8),tm2,0,drvY-.33,drvZ+.29).scale.set(1.2,.8,.7);
+    for(const s of[-1,1]){const c=add(new THREE.ConeGeometry(.09,.18,3),Mt(ch.suit),s*.1,drvY-.33,drvZ+.25);c.rotation.z=s*2.2;c.rotation.x=.3;}}
+  if(ch.necklace){const n=add(new THREE.TorusGeometry(.2,.008,6,24,Math.PI),Mt('#d9dde0',false,{shininess:150,specular:0xffffff}),0,drvY-.34,drvZ+.2);n.rotation.x=Math.PI/2+.5;n.rotation.z=Math.PI;}
   if(ch.band){const b=add(new THREE.CylinderGeometry(.315,.315,.12,18,1,true),Mt(ch.band),0,drvY-.5,drvZ);b.material.side=THREE.DoubleSide;}
   if(ch.straps){for(const s of[-1,1]){const st=add(new THREE.BoxGeometry(.07,.62,.05),Mt(ch.straps),s*.14,drvY-.52,drvZ+.29);st.rotation.x=-.12;}
     add(new THREE.CapsuleGeometry(.31,.12,6,14),Mt(ch.straps),0,drvY-.78,drvZ);}
@@ -451,6 +461,10 @@ function makeKartMesh(ci,bi,wi,ghost){
   else if(ch.hat==='hair'){const h=add(new THREE.SphereGeometry(.47,20,14,0,Math.PI*2,0,Math.PI*.55),hat,0,hy+.04,hz-.03);h.scale.set(1.04,1,1.06);add(new THREE.SphereGeometry(.17,12,10),hat,0,hy-.06,hz-.5);}
   else if(ch.hat==='straw'){add(new THREE.CylinderGeometry(.85,.88,.05,24),hat,0,hy+.28,hz);add(new THREE.CylinderGeometry(.36,.42,.3,20),hat,0,hy+.44,hz);}
   else if(ch.hat==='beak'){const bk=add(new THREE.ConeGeometry(.14,.5,12),hat,0,hy-.06,hz+.62);bk.rotation.x=Math.PI/2;}
+  else if(ch.hat==='messy'){ // tousled, pushed-up hair
+    const h=add(new THREE.SphereGeometry(.47,24,16,0,Math.PI*2,0,Math.PI*.52),hat,0,hy+.04,hz-.04);h.scale.set(1.04,1.04,1.06);h.rotation.x=-.45;
+    const tg=new THREE.SphereGeometry(.12,10,8);for(let i=0;i<11;i++){const a=i/11*Math.PI*2,r=.24+(i%3)*.05;const t=add(tg,hat,Math.cos(a)*r,hy+.4+(i%2)*.04,hz-.06+Math.sin(a)*r*.9);t.scale.set(1.1,.8+(i%3)*.15,1.1);}
+    add(tg,hat,0,hy+.47,hz+.12).scale.set(1.5,.9,1.2);}
   else if(ch.hat==='swoop'){ // light-brown hair, parted in the middle, swept down over the temples
     const h=add(new THREE.SphereGeometry(.47,24,16,0,Math.PI*2,0,Math.PI*.5),hat,0,hy+.04,hz-.03);h.scale.set(1.04,1.05,1.08);h.rotation.x=-.3;
     for(const s of[-1,1]){const sw=add(new THREE.SphereGeometry(.2,14,10),hat,s*.27,hy+.2,hz+.25);sw.scale.set(1.25,.6,.75);sw.rotation.z=-s*.5;
@@ -469,6 +483,11 @@ function makeKartMesh(ci,bi,wi,ghost){
   else if(ch.hat==='hard'){const h=add(new THREE.SphereGeometry(.48,20,12,0,Math.PI*2,0,Math.PI/2),hat,0,hy+.08,hz);h.scale.set(1,.8,1);add(new THREE.CylinderGeometry(.58,.58,.04,24),hat,0,hy+.1,hz);}
   if(ch.brows){for(const s of[-1,1]){const b=add(new THREE.CapsuleGeometry(ch.angry?.03:.025,.14,4,8),Mt(ch.brows),s*.16,ch.angry?hy+.17:hy+.2,hz+.41);b.rotation.z=Math.PI/2+(ch.angry?s*.45:s*.12);}}
   if(ch.mouth==='frown'){const m=add(new THREE.TorusGeometry(.08,.019,8,16,Math.PI),Mt('#8a3b34'),0,hy-.15,hz+.42);m.rotation.x=-.2;}
+  if(ch.shades){const lm=Mt('#141414',false,{shininess:150,specular:0xffffff});for(const s of[-1,1]){const l=add(new THREE.SphereGeometry(.12,14,10),lm,s*.15,hy+.4,hz+.3);l.scale.set(1.1,.7,.35);l.rotation.x=-.9;}
+    add(new THREE.BoxGeometry(.56,.03,.03),lm,0,hy+.43,hz+.3).rotation.x=-.9;}
+  if(ch.stubble){const st=add(new THREE.SphereGeometry(.447,24,16,0,Math.PI*2,Math.PI*.6,Math.PI*.4),Mt(ch.stubble),0,hy,hz+.005);st.rotation.x=.55;st.material.transparent=true;st.material.opacity=.55;}
+  if(ch.mouth==='pout'){const m=add(new THREE.TorusGeometry(.055,.03,10,18),Mt('#d06a72',false,{shininess:120,specular:0xffffff}),0,hy-.15,hz+.43);m.rotation.x=-.2;m.scale.set(1.25,.85,1);
+    add(new THREE.SphereGeometry(.035,8,6),Mt('#5a2025'),0,hy-.15,hz+.425);}
   if(ch.blush){for(const s of[-1,1]){const b=add(new THREE.SphereGeometry(.07,12,8),Mt('#f09a9a'),s*.25,hy-.06,hz+.35);b.scale.set(1,.6,.35);b.rotation.y=s*.5;}}
   if(ch.smile==='soft'){const m=add(new THREE.TorusGeometry(.09,.016,8,18,Math.PI),Mt('#a5534c'),0,hy-.11,hz+.42);m.rotation.z=Math.PI;m.rotation.x=-.25;}
   else if(ch.smile){const m=add(new THREE.TorusGeometry(.1,.018,8,18,Math.PI),Mt('#8a3b34'),0,hy-.1,hz+.42);m.rotation.z=Math.PI;m.rotation.x=-.25;
@@ -926,6 +945,10 @@ function portrait(ci){const c=CHARS[ci];let hat='';const hc=c.hatC;
   else if(c.hat==='hard')hat=`<path d="M11 21a13 12 0 0 1 26 0z" fill="${hc}"/><rect x="8" y="20" width="32" height="3" rx="1.5" fill="${hc}"/>`;
   if(c.hat==='curls'){hat='';for(let i=0;i<16;i++){const a=Math.PI*(1.05+i/15*0.9),r=11.5+(i%3);hat+=`<circle cx="${(24+Math.cos(a)*r).toFixed(1)}" cy="${(25+Math.sin(a)*r).toFixed(1)}" r="4.6" fill="${hc}"/>`;}
     for(const x of[12.5,35.5])hat+=`<circle cx="${x}" cy="30" r="4" fill="${hc}"/>`;}
+  if(c.hat==='messy')hat=`<path d="M11 27c-1-9 4-15 13-15 8 0 14 5 13 15-3-6-6-8-13-8s-10 2-13 8z" fill="${hc}"/><circle cx="17" cy="13" r="3.5" fill="${hc}"/><circle cx="24" cy="11" r="4" fill="${hc}"/><circle cx="31" cy="13" r="3.5" fill="${hc}"/>`;
+  if(c.shades)hat+=`<rect x="14" y="15.5" width="8" height="4" rx="2" fill="#141414"/><rect x="26" y="15.5" width="8" height="4" rx="2" fill="#141414"/><path d="M22 17h4" stroke="#141414" stroke-width="1.4"/>`;
+  if(c.stubble)hat+=`<path d="M14 31q10 11 20 0q-2 7-10 8q-8-1-10-8z" fill="${c.stubble}" opacity=".55"/>`;
+  if(c.mouth==='pout')hat+=`<ellipse cx="24" cy="33.5" rx="3" ry="2.2" fill="#d06a72"/><ellipse cx="24" cy="33.5" rx="1.1" ry=".9" fill="#5a2025"/>`;
   if(c.hat==='swoop')hat=`<path d="M11 28c-1-10 5-16 13-16s14 6 13 16c-2-4-3-7-6-8-2 3-5 4-7 4 2-2 1-3 0-4-1 1-2 2-7 4-3 1-5 3-6 4z" fill="${hc}"/>`;
   if(c.blush)hat+=`<circle cx="16.5" cy="31" r="2.4" fill="#f09a9a" opacity=".8"/><circle cx="31.5" cy="31" r="2.4" fill="#f09a9a" opacity=".8"/>`;
   if(c.smile==='soft')hat+=`<path d="M20.5 32q3.5 2.8 7 0" stroke="#a5534c" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
@@ -1126,7 +1149,7 @@ function render(){camera.updateMatrixWorld();
 /* ================= BOOT ================= */
 resize();
 $('#touch').hidden=!isTouch;
-fetch('./groningen-bag.json?v=202610102046').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
+fetch('./groningen-bag.json?v=202610102055').then(r=>r.json()).then(d=>{DATA=d;buildCity();buildTrack(TRACK_IDS[0]);
   applyDetail();screenTitle();loadCity().catch(e=>{console.error(e);showMsg('Stad laden mislukt',3,true);});
   window.__gk={get karts(){return karts;},get player(){return player;},get state(){return state;},get TR(){return TR;},get gp(){return gp;},startRace,screenResults,sel,setGP:g=>{gp=g;},makeRoster,
     get raceTime(){return raceTime;},DBG,collideCircle,inWater};
