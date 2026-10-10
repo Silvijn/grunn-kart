@@ -17,6 +17,8 @@ function fmt1(t){const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.
 let LAPS=3;const SIDE=3, CANAL=16, FARQ=4, GRASS=8, RAMPH=2.0;
 const PTS=[15,12,10,9,8,7,6,5,4,3,2,1];
 const CHARS=[
+ {name:'Bakkus',w:'L',role:'Huisgenoot',suit:'#f6f4ef',panels:'#2f63c4',skin:'#efc7ae',hat:'swoop',long:true,hatC:'#6b4a30',kart:'#d63a3a',brows:'#6b4a30',sleepy:true,mouth:'flat',necklace:true,custom:true},
+ {name:'El Hofnar',w:'L',role:'Huisgenoot',suit:'#d6d8da',hood:true,skin:'#efc4a8',hat:'bald',hatC:'#c48d5c',kart:'#f4f4f2',decal:'flames',brows:'#b98455',smile:'soft',stubble:'#c49a78',custom:true},
  {name:'de Swinck',w:'M',role:'Huisgenoot',suit:'#eab79b',skin:'#eab79b',hat:'flow',hatC:'#5e3c24',kart:'#f28cc0',ornament:'duck',brows:'#5e3c24',smile:'soft',squint:true,beard:'#9a6a44',shades:true,necklace:true,blush:true,custom:true},
  {name:'Chillvijn',w:'M',role:'Huisgenoot',suit:'#f6f4ef',skin:'#efc2a4',hat:'messy',hatC:'#9a7650',kart:'#f2c61f',emblem:{text:'W',color:'#6d3fa0'},brows:'#7a5a3c',mouth:'pout',stubble:'#b78a6c',shades:true,tie:['#1d3c8f','#8cc8ec'],necklace:true,custom:true},
  {name:'Sherminator',w:'M',role:'Huisgenoot',suit:'#f4f2ee',skin:'#f1c9b0',hat:'swoop',hatC:'#8a5e3a',kart:'#8cc8ec',pattern:'stripes',dotC:'#1d3c8f',brows:'#6e4a2e',smile:'soft',blush:true,bigEyes:true,custom:true},
@@ -314,6 +316,12 @@ function makeKartMesh(ci,bi,wi,ghost){
   if(ch.ornament==='duck'){const O={stad:[.78,1.2],bak:[1.38,1.25],racer:[.66,1.35],brom:[1.36,.95]}[body];const dy=Mt('#ffd23f',false,{shininess:90});
     const b=add(new THREE.SphereGeometry(.2,16,12),dy,0,O[0]+.12,O[1]);b.scale.set(1,.8,1.25);add(new THREE.SphereGeometry(.13,14,10),dy,0,O[0]+.32,O[1]+.12);
     const bk=add(new THREE.ConeGeometry(.05,.14,10),Mt('#ff8a1f'),0,O[0]+.31,O[1]+.27);bk.rotation.x=Math.PI/2;for(const s of[-1,1])add(new THREE.SphereGeometry(.022,6,5),Mt('#101418'),s*.06,O[0]+.36,O[1]+.22);}
+  if(ch.decal==='flames'){const F={stad:[.63,.52,.05,2.1],bak:[.6,.5,-.3,1.6],racer:[.57,.45,.1,2.4],brom:[.33,.65,0,1.7]}[body];
+    const ft=canvasTex(256,64,(g2)=>{g2.clearRect(0,0,256,64);const flame=(c,sc)=>{g2.fillStyle=c;g2.beginPath();g2.moveTo(256,58);
+      for(let k=0;k<5;k++){const x=230-k*44*sc;g2.quadraticCurveTo(x+10,30,x-34*sc,10+(k%2)*8);g2.quadraticCurveTo(x-14,36,x-20*sc,58);}g2.lineTo(256,58);g2.closePath();g2.fill();};
+      flame('#d63a3a',1);flame('#ff7a1a',.82);flame('#ffcf3f',.6);},true);
+    const fmat=new THREE.MeshBasicMaterial({map:ft,transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});mats.push(fmat);
+    for(const s of[-1,1]){const d=add(new THREE.PlaneGeometry(F[3],F[3]/4),fmat,s*F[0],F[1],F[2]);d.rotation.y=s>0?Math.PI/2:-Math.PI/2;if(s<0)d.scale.x=-1;}}
   if(ch.emblem){const E={stad:[.72,1.15,-1.43],bak:[.86,1.77,0],racer:[.62,1.3,-1.45],brom:[.98,1.13,-.2]}[body];
     const et=canvasTex(128,128,(g2)=>{g2.clearRect(0,0,128,128);g2.fillStyle=ch.emblem.color;g2.font='900 112px "Bowlby One","Arial Black",sans-serif';g2.textAlign='center';g2.textBaseline='middle';g2.fillText(ch.emblem.text,64,70);},true);
     const em=new THREE.MeshBasicMaterial({map:et,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});mats.push(em);
@@ -322,6 +330,10 @@ function makeKartMesh(ci,bi,wi,ghost){
   const drv0=bodyG.children.length;
   const suit=Mt(ch.suit),skin=Mt(ch.skin),hat=Mt(ch.hatC,false,{shininess:70}),eye=Mt('#101418');
   add(new THREE.CapsuleGeometry(.3,.3,6,14),suit,0,drvY-.55,drvZ);
+  if(ch.panels){for(const s of[-1,1]){const pn=add(new THREE.BoxGeometry(.09,.6,.03),Mt(ch.panels),s*.12,drvY-.55,drvZ+.3);pn.rotation.x=-.08;}}
+  if(ch.hood){const hd=add(new THREE.TorusGeometry(.24,.09,10,20),Mt(ch.suit),0,drvY-.3,drvZ-.12);hd.rotation.x=Math.PI/2.4;
+    add(new THREE.CylinderGeometry(.16,.18,.08,16),Mt('#f6f4ef'),0,drvY-.29,drvZ+.04);
+    for(const s of[-1,1])add(new THREE.CylinderGeometry(.012,.012,.32,6),Mt('#eeeeee'),s*.07,drvY-.48,drvZ+.31);}
   if(ch.tie){const tt=stripeTexture(ch.tie[0],ch.tie[1]);const tm2=new THREE.MeshPhongMaterial({map:tt,shininess:60});mats.push(tm2);
     const ts=new THREE.Shape();ts.moveTo(-.06,0);ts.lineTo(.06,0);ts.lineTo(.09,-.36);ts.lineTo(0,-.46);ts.lineTo(-.09,-.36);ts.closePath();
     const tie=add(new THREE.ShapeGeometry(ts),tm2,0,drvY-.33,drvZ+.305);tie.rotation.x=-.12;add(new THREE.SphereGeometry(.06,10,8),tm2,0,drvY-.33,drvZ+.29).scale.set(1.2,.8,.7);
@@ -333,7 +345,9 @@ function makeKartMesh(ci,bi,wi,ghost){
   for(const s of[-1,1]){capsule(.08,.32,suit,s*.26,drvY-.42,drvZ+.3,-1.0);add(new THREE.SphereGeometry(.085,10,8),skin,s*.2,drvY-.38,drvZ+.58);}
   add(new THREE.SphereGeometry(.44,24,18),skin,0,drvY,drvZ);
   const hy=drvY,hz=drvZ;
-  if(ch.hat!=='helm'){const er=ch.bigEyes?.095:.075;if(ch.squint){for(const s of[-1,1]){const e=add(new THREE.CapsuleGeometry(.018,.08,4,8),eye,s*.16,hy+.07,hz+.42);e.rotation.z=Math.PI/2+s*.15;}}else for(const s of[-1,1]){add(new THREE.SphereGeometry(er,12,10),Mt('#ffffff'),s*.16,hy+.08,hz+.38);add(new THREE.SphereGeometry(er*.6,10,8),eye,s*.16,hy+.075,hz+.45);if(ch.bigEyes)add(new THREE.SphereGeometry(.016,6,5),Mt('#ffffff',true),s*.16+.018,hy+.1,hz+.5);}
+  if(ch.hat!=='helm'){const er=ch.bigEyes?.095:.075;if(ch.squint){for(const s of[-1,1]){const e=add(new THREE.CapsuleGeometry(.018,.08,4,8),eye,s*.16,hy+.07,hz+.42);e.rotation.z=Math.PI/2+s*.15;}}else if(ch.sleepy){for(const s of[-1,1]){add(new THREE.SphereGeometry(er,12,10),Mt('#ffffff'),s*.16,hy+.08,hz+.38);add(new THREE.SphereGeometry(er*.55,10,8),Mt('#4f6f8a'),s*.16,hy+.065,hz+.45);
+      const lid=add(new THREE.SphereGeometry(er*1.08,14,10,0,Math.PI*2,0,Math.PI*.55),skin,s*.16,hy+.08,hz+.385);lid.rotation.x=.35;}}
+  else for(const s of[-1,1]){add(new THREE.SphereGeometry(er,12,10),Mt('#ffffff'),s*.16,hy+.08,hz+.38);add(new THREE.SphereGeometry(er*.6,10,8),eye,s*.16,hy+.075,hz+.45);if(ch.bigEyes)add(new THREE.SphereGeometry(.016,6,5),Mt('#ffffff',true),s*.16+.018,hy+.1,hz+.5);}
     add(new THREE.SphereGeometry(.07,10,8),skin,0,hy-.04,hz+.44);}
   if(ch.hat==='helm'){const h=add(new THREE.SphereGeometry(.5,24,18),hat,0,hy+.04,hz);h.scale.set(1,.94,1.02);const v=add(new THREE.SphereGeometry(.3,20,14),Mt('#16202a',false,{shininess:140,specular:0xffffff}),0,hy+.02,hz+.3);v.scale.set(1.25,.62,.62);}
   else if(ch.hat==='cap'){const c=add(new THREE.SphereGeometry(.46,20,12,0,Math.PI*2,0,Math.PI/2),hat,0,hy+.08,hz);c.scale.set(1,.7,1);add(new THREE.CylinderGeometry(.28,.3,.04,16),hat,0,hy+.12,hz+.36);}
@@ -348,6 +362,9 @@ function makeKartMesh(ci,bi,wi,ghost){
     for(const s of[-1,1]){const sd=add(new THREE.SphereGeometry(.2,14,10),hat,s*.36,hy-.02,hz-.04);sd.scale.set(.6,1.35,1.25);
       const fr=add(new THREE.SphereGeometry(.17,14,10),hat,s*.2,hy+.28,hz+.26);fr.scale.set(1.2,.55,.6);fr.rotation.z=-s*.4;}
     add(new THREE.SphereGeometry(.32,16,12),hat,0,hy-.06,hz-.26).scale.set(1.35,1.15,1);}
+  else if(ch.hat==='bald'){ // shiny top, a low ring of short hair at the sides and back
+    const sh2=add(new THREE.SphereGeometry(.443,24,16,0,Math.PI*2,0,Math.PI*.42),Mt(ch.skin,false,{shininess:160,specular:0xaaaaaa}),0,hy+.005,hz);void sh2;
+    const fr=add(new THREE.TorusGeometry(.43,.07,8,28,Math.PI*1.25),hat,0,hy+.08,hz-.02);fr.rotation.x=Math.PI/2;fr.rotation.z=Math.PI*.875;fr.scale.set(1,1.02,.8);}
   else if(ch.hat==='messy'){ // tousled, pushed-up hair
     const h=add(new THREE.SphereGeometry(.47,24,16,0,Math.PI*2,0,Math.PI*.52),hat,0,hy+.04,hz-.04);h.scale.set(1.04,1.04,1.06);h.rotation.x=-.45;
     const tg=new THREE.SphereGeometry(.12,10,8);for(let i=0;i<11;i++){const a=i/11*Math.PI*2,r=.24+(i%3)*.05;const t=add(tg,hat,Math.cos(a)*r,hy+.4+(i%2)*.04,hz-.06+Math.sin(a)*r*.9);t.scale.set(1.1,.8+(i%3)*.15,1.1);}
@@ -355,7 +372,7 @@ function makeKartMesh(ci,bi,wi,ghost){
   else if(ch.hat==='swoop'){ // light-brown hair, parted in the middle, swept down over the temples
     const h=add(new THREE.SphereGeometry(.47,24,16,0,Math.PI*2,0,Math.PI*.5),hat,0,hy+.04,hz-.03);h.scale.set(1.04,1.05,1.08);h.rotation.x=-.3;
     for(const s of[-1,1]){const sw=add(new THREE.SphereGeometry(.2,14,10),hat,s*.27,hy+.2,hz+.25);sw.scale.set(1.25,.6,.75);sw.rotation.z=-s*.5;
-      const side=add(new THREE.SphereGeometry(.17,12,10),hat,s*.38,hy+.02,hz+.02);side.scale.set(.55,1.2,1.1);}
+      const side=add(new THREE.SphereGeometry(.17,12,10),hat,s*.38,ch.long?hy+.04:hy+.02,hz-.02);side.scale.set(ch.long?.5:.55,ch.long?1.3:1.2,ch.long?1.2:1.1);}
     add(new THREE.SphereGeometry(.3,16,12),hat,0,hy-.02,hz-.25).scale.set(1.35,1.05,1);}
   else if(ch.hat==='slick'){ // combed-back hair: smooth cap from the hairline over the back of the head
     const h=add(new THREE.SphereGeometry(.47,24,16,0,Math.PI*2,0,Math.PI*.58),Mt(ch.hatC,false,{shininess:140,specular:0x777777}),0,hy+.03,hz-.05);h.scale.set(1.03,1.06,1.1);h.rotation.x=-1.05;
@@ -375,6 +392,7 @@ function makeKartMesh(ci,bi,wi,ghost){
   if(ch.beard){const bm=Mt(ch.beard);const bd=add(new THREE.SphereGeometry(.452,24,16,0,Math.PI*2,Math.PI*.66,Math.PI*.34),bm,0,hy+.01,hz+.01);bd.rotation.x=-.32;
     const mu=add(new THREE.CapsuleGeometry(.03,.14,4,8),bm,0,hy-.085,hz+.43);mu.rotation.z=Math.PI/2;}
   if(ch.stubble){const st=add(new THREE.SphereGeometry(.447,24,16,0,Math.PI*2,Math.PI*.66,Math.PI*.34),Mt(ch.stubble),0,hy,hz+.005);st.rotation.x=-.32;st.material.transparent=true;st.material.opacity=.55;}
+  if(ch.mouth==='flat'){const m=add(new THREE.CapsuleGeometry(.016,.1,4,8),Mt('#a5534c'),0,hy-.15,hz+.415);m.rotation.z=Math.PI/2;}
   if(ch.mouth==='pout'){const m=add(new THREE.TorusGeometry(.055,.03,10,18),Mt('#d06a72',false,{shininess:120,specular:0xffffff}),0,hy-.15,hz+.43);m.rotation.x=-.2;m.scale.set(1.25,.85,1);
     add(new THREE.SphereGeometry(.035,8,6),Mt('#5a2025'),0,hy-.15,hz+.425);}
   if(ch.blush){for(const s of[-1,1]){const b=add(new THREE.SphereGeometry(.07,12,8),Mt('#f09a9a'),s*.25,hy-.06,hz+.35);b.scale.set(1,.6,.35);b.rotation.y=s*.5;}}
@@ -834,6 +852,9 @@ function portrait(ci){const c=CHARS[ci];let hat='';const hc=c.hatC;
   else if(c.hat==='hard')hat=`<path d="M11 21a13 12 0 0 1 26 0z" fill="${hc}"/><rect x="8" y="20" width="32" height="3" rx="1.5" fill="${hc}"/>`;
   if(c.hat==='curls'){hat='';for(let i=0;i<16;i++){const a=Math.PI*(1.05+i/15*0.9),r=11.5+(i%3);hat+=`<circle cx="${(24+Math.cos(a)*r).toFixed(1)}" cy="${(25+Math.sin(a)*r).toFixed(1)}" r="4.6" fill="${hc}"/>`;}
     for(const x of[12.5,35.5])hat+=`<circle cx="${x}" cy="30" r="4" fill="${hc}"/>`;}
+  if(c.hat==='bald')hat=`<circle cx="21" cy="19" r="3" fill="#fff" opacity=".35"/><path d="M12.5 30c-1-3 0-6 1.5-7M35.5 30c1-3 0-6-1.5-7" stroke="${hc}" stroke-width="3.5" stroke-linecap="round" fill="none"/>`;
+  if(c.sleepy)hat+=`<path d="M17 26.5h5M26 26.5h5" stroke="#101418" stroke-width="2" stroke-linecap="round"/><path d="M17 27.5q2.5 1.5 5 0M26 27.5q2.5 1.5 5 0" stroke="#4f6f8a" stroke-width="1.3" fill="none"/>`;
+  if(c.mouth==='flat')hat+=`<path d="M21 34h6" stroke="#a5534c" stroke-width="1.7" stroke-linecap="round"/>`;
   if(c.hat==='flow')hat=`<path d="M11 33c-2-13 4-21 13-21s15 8 13 21c-1-6-2-9-4-11-3 0-6-1-9-4-3 3-6 4-9 4-2 2-3 5-4 11z" fill="${hc}"/>`;
   if(c.beard)hat+=`<path d="M13.5 29q10.5 15 21 0q-1 9-10.5 10q-9.5-1-10.5-10z" fill="${c.beard}"/>`;
   if(c.squint)hat+=`<path d="M17.5 27h4M26.5 27h4" stroke="#101418" stroke-width="1.8" stroke-linecap="round"/>`;
@@ -848,7 +869,7 @@ function portrait(ci){const c=CHARS[ci];let hat='';const hc=c.hatC;
   if(c.brows)hat+=c.angry?`<path d="M16.5 21.5l5.5 2.5M31.5 21.5l-5.5 2.5" stroke="${c.brows}" stroke-width="2" stroke-linecap="round"/>`:`<path d="M17 23.5h5M26 23.5h5" stroke="${c.brows}" stroke-width="1.8" stroke-linecap="round"/>`;
   if(c.mouth==='frown')hat+=`<path d="M20.5 34.5q3.5-2.6 7 0" stroke="#7a2a2a" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
   if(c.smile===true)hat+=`<path d="M19.5 31.5q4.5 4 9 0" stroke="#7a2a2a" stroke-width="1.8" fill="#fff" stroke-linecap="round"/>`;
-  const eyes=c.hat==='helm'||c.squint?'':'<circle cx="19.5" cy="27" r="1.6" fill="#101418"/><circle cx="28.5" cy="27" r="1.6" fill="#101418"/>';
+  const eyes=c.hat==='helm'||c.squint||c.sleepy?'':'<circle cx="19.5" cy="27" r="1.6" fill="#101418"/><circle cx="28.5" cy="27" r="1.6" fill="#101418"/>';
   return`<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="${c.kart}" opacity=".35"/><rect x="14" y="36" width="20" height="12" rx="5" fill="${c.suit}"/><circle cx="24" cy="27" r="12" fill="${c.skin}"/>${eyes}${hat}</svg>`;}
 
 let preview=null,previewKey='';
